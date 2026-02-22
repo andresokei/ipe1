@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPE I — CIFP Cerdeño</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5f0e8; --white: #fdfcf9;
+    --terracotta: #c0533a; --terracotta-light: #e8d5cf; --terracotta-dark: #8f3726;
+    --slate: #2d3f50; --slate-light: #d6e2ea;
+    --gold: #c8973a; --gold-light: #f0e4c8;
+    --green: #3a7d5a; --green-light: #d0eadb;
+    --text: #1e2a35; --muted: #7a8b96; --border: #ddd5c8; --radius: 12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: 'Lato', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(0,0,0,0.018) 24px, rgba(0,0,0,0.018) 25px);
+    pointer-events: none; z-index: 0;
+  }
+  nav {
+    position: relative; z-index: 10; background: var(--white); border-bottom: 1px solid var(--border);
+    padding: 16px 40px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-brand { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--slate); display: flex; align-items: center; gap: 10px; }
+  .nav-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--terracotta); }
+  .nav-year { font-size: 13px; color: var(--muted); border: 1px solid var(--border); padding: 5px 14px; border-radius: 100px; background: var(--cream); }
+  .hero { position: relative; z-index: 1; background: var(--slate); padding: 80px 40px 72px; overflow: hidden; animation: fadeUp 0.5s ease both; }
+  .hero::after { content: 'IPE'; position: absolute; right: 40px; top: 50%; transform: translateY(-50%); font-family: 'Playfair Display', serif; font-size: 280px; font-weight: 800; font-style: italic; color: rgba(255,255,255,0.04); pointer-events: none; line-height: 1; user-select: none; }
+  .hero-inner { max-width: 880px; margin: 0 auto; position: relative; z-index: 1; }
+  .hero-label { display: inline-block; background: var(--terracotta); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 5px 14px; border-radius: 4px; margin-bottom: 28px; }
+  h1 { font-family: 'Playfair Display', serif; font-size: clamp(36px, 6vw, 68px); font-weight: 800; line-height: 1.05; color: var(--white); margin-bottom: 18px; }
+  h1 em { font-style: italic; color: var(--gold); }
+  .hero-sub { font-size: 17px; color: rgba(255,255,255,0.6); font-weight: 300; max-width: 500px; line-height: 1.7; margin-bottom: 36px; }
+  .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
+  .btn { font-family: 'Lato', sans-serif; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; text-decoration: none; display: inline-block; transition: all 0.15s; }
+  .btn-terra { background: var(--terracotta); color: #fff; }
+  .btn-terra:hover { background: var(--terracotta-dark); transform: translateY(-1px); }
+  .btn-gold { background: var(--gold); color: #fff; }
+  .btn-gold:hover { background: #a97a20; transform: translateY(-1px); }
+  .stats { position: relative; z-index: 1; background: var(--white); border-bottom: 1px solid var(--border); display: flex; animation: fadeUp 0.5s 0.1s ease both; }
+  .stat { flex: 1; padding: 28px 36px; border-right: 1px solid var(--border); display: flex; align-items: baseline; gap: 10px; }
+  .stat:last-child { border-right: none; }
+  .stat-num { font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 800; color: var(--slate); line-height: 1; }
+  .stat-label { font-size: 14px; color: var(--muted); font-weight: 300; }
+  main { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; padding: 60px 40px 100px; animation: fadeUp 0.5s 0.2s ease both; }
+  .section-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--terracotta); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+  .section-eyebrow::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .units-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .unit-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px 28px; text-decoration: none; color: inherit; display: flex; flex-direction: column; transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s; position: relative; overflow: hidden; }
+  .unit-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; transform: scaleX(0); transform-origin: left; transition: transform 0.3s ease; }
+  .unit-card:hover::before { transform: scaleX(1); }
+  .unit-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(45,63,80,0.1); }
+  .unit-card.laboral::before { background: var(--terracotta); }
+  .unit-card.laboral:hover { border-color: var(--terracotta); }
+  .unit-card.ss::before { background: var(--gold); }
+  .unit-card.ss:hover { border-color: var(--gold); }
+  .unit-card.soon { opacity: 0.45; pointer-events: none; }
+  .card-unit-num { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+  .card-icon { font-size: 38px; margin-bottom: 18px; }
+  .card-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--slate); line-height: 1.2; margin-bottom: 10px; }
+  .card-desc { font-size: 14px; color: var(--muted); line-height: 1.7; flex: 1; margin-bottom: 22px; font-weight: 300; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 24px; }
+  .tag { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 4px; background: var(--cream); color: var(--muted); border: 1px solid var(--border); }
+  .laboral .tag { background: var(--terracotta-light); color: var(--terracotta-dark); border-color: var(--terracotta-light); }
+  .ss .tag { background: var(--gold-light); color: #7a5a18; border-color: var(--gold-light); }
+  .card-footer { border-top: 1px solid var(--border); padding-top: 18px; display: flex; align-items: center; justify-content: space-between; }
+  .card-cta { font-size: 14px; font-weight: 700; }
+  .laboral .card-cta { color: var(--terracotta); }
+  .ss .card-cta { color: var(--gold); }
+  .soon .card-cta { color: var(--muted); }
+  .card-arrow { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; border: 1px solid var(--border); color: var(--muted); transition: all 0.15s; }
+  .unit-card.laboral:hover .card-arrow { background: var(--terracotta); border-color: var(--terracotta); color: #fff; }
+  .unit-card.ss:hover .card-arrow { background: var(--gold); border-color: var(--gold); color: #fff; }
+  .soon-pill { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; background: var(--cream); color: var(--muted); border: 1px solid var(--border); margin-bottom: 18px; }
+  footer { position: relative; z-index: 1; background: var(--white); border-top: 1px solid var(--border); padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 13px; color: var(--muted); }
+  footer strong { color: var(--text); font-weight: 700; }
+  @media(max-width: 600px) {
+    nav, .hero, main, footer { padding-left: 20px; padding-right: 20px; }
+    .stats { flex-direction: column; }
+    .stat { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat:last-child { border-bottom: none; }
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand"><span class="nav-dot"></span> CIFP Cerdeño</div>
+  <span class="nav-year">Curso 2025–2026</span>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-label">Módulo formativo</div>
+    <h1>Itinerario Personal<br>para la <em>Empleabilidad I</em></h1>
+    <p class="hero-sub">Recursos interactivos para estudiar los contenidos del módulo. Lecciones y quizzes por unidad temática.</p>
+    <div class="hero-cta">
+      <a class="btn btn-terra" href="relacion-laboral.html">Relación Laboral →</a>
+      <a class="btn btn-gold" href="seguridad-social.html">Seguridad Social →</a>
+    </div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="stat-num">2</span><span class="stat-label">unidades disponibles</span></div>
+  <div class="stat"><span class="stat-num">20</span><span class="stat-label">lecciones</span></div>
+  <div class="stat"><span class="stat-num">48</span><span class="stat-label">preguntas de quiz</span></div>
+</div>
+
+<main>
+  <div class="section-eyebrow">Unidades disponibles</div>
+  <div class="units-grid">
+
+    <a class="unit-card laboral" href="relacion-laboral.html">
+      <div class="card-unit-num">Unidad 06</div>
+      <div class="card-icon">⚖️</div>
+      <div class="card-title">La Relación Laboral y el Contrato de Trabajo</div>
+      <p class="card-desc">Derecho del Trabajo, fuentes normativas, jerarquía de normas, derechos y deberes del trabajador/a y organismos de protección.</p>
+      <div class="card-tags">
+        <span class="tag">Derecho Laboral</span><span class="tag">Fuentes</span><span class="tag">Derechos</span><span class="tag">Tribunales</span>
+      </div>
+      <div class="card-footer">
+        <span class="card-cta">Acceder a la unidad →</span>
+        <span class="card-arrow">↗</span>
+      </div>
+    </a>
+
+    <a class="unit-card ss" href="seguridad-social.html">
+      <div class="card-unit-num">Seguridad Social</div>
+      <div class="card-icon">🏛️</div>
+      <div class="card-title">La Seguridad Social</div>
+      <p class="card-desc">Regímenes y afiliación, cotizaciones y bases, prestaciones (paro, baja, jubilación) y derechos y obligaciones ante el sistema.</p>
+      <div class="card-tags">
+        <span class="tag">Regímenes</span><span class="tag">Cotización</span><span class="tag">Prestaciones</span><span class="tag">Derechos</span>
+      </div>
+      <div class="card-footer">
+        <span class="card-cta">Acceder a la unidad →</span>
+        <span class="card-arrow">↗</span>
+      </div>
+    </a>
+
+    <div class="unit-card soon">
+      <span class="soon-pill">Próximamente</span>
+      <div class="card-icon">📄</div>
+      <div class="card-title">El Contrato de Trabajo</div>
+      <p class="card-desc">Tipos de contrato, modalidades, duración y extinción de la relación laboral.</p>
+      <div class="card-footer"><span class="card-cta">En preparación</span></div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div><strong>CIFP Cerdeño</strong> · Itinerario Personal para la Empleabilidad I</div>
+  <div>Curso 2025–2026</div>
+</footer>
+
+</body>
+</html>

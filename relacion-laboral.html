@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaborLex — La Relación Laboral</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5f0e8;
+    --white: #fdfcf9;
+    --terracotta: #c0533a;
+    --terracotta-light: #e8d5cf;
+    --terracotta-dark: #8f3726;
+    --slate: #2d3f50;
+    --slate-mid: #4a6070;
+    --slate-light: #d6e2ea;
+    --gold: #c8973a;
+    --gold-light: #f0e4c8;
+    --green: #3a7d5a;
+    --green-light: #d0eadb;
+    --text: #1e2a35;
+    --muted: #7a8b96;
+    --border: #ddd5c8;
+    --radius: 12px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'Lato', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle paper texture via repeating gradient */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: repeating-linear-gradient(
+      0deg, transparent, transparent 24px,
+      rgba(0,0,0,0.018) 24px, rgba(0,0,0,0.018) 25px
+    );
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ===== SCREENS ===== */
+  .screen { display: none; position: relative; z-index: 1; }
+
+  #home.active { display: flex; flex-direction: column; }
+  #mode-select.active { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 80px 20px; }
+  #topic-select.active { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 80px 20px; }
+  #lesson-screen.active { display: block; }
+  #quiz-screen.active { display: block; }
+  #results-screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 80px 20px; text-align: center; }
+
+  /* ===== NAV ===== */
+  .top-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-weight: 700;
+    color: var(--slate);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-brand .brand-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--terracotta);
+  }
+  .nav-back {
+    font-size: 14px; color: var(--muted); cursor: pointer;
+    background: none; border: 1px solid var(--border);
+    padding: 7px 16px; border-radius: 100px;
+    font-family: 'Lato', sans-serif; font-weight: 700;
+    transition: all 0.15s; display: none;
+  }
+  .nav-back:hover { border-color: var(--terracotta); color: var(--terracotta); }
+  .nav-back.visible { display: block; }
+  .nav-home {
+    font-size: 13px; color: var(--muted); text-decoration: none;
+    border: 1px solid var(--border); padding: 7px 14px; border-radius: 100px;
+    font-family: 'Lato', sans-serif; font-weight: 700;
+    transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+  }
+  .nav-home:hover { border-color: var(--terracotta); color: var(--terracotta); }
+
+  /* ===== HOME ===== */
+  #home {
+    min-height: 100vh;
+  }
+
+  .home-hero {
+    background: var(--slate);
+    padding: 120px 40px 80px;
+    color: var(--white);
+    position: relative; overflow: hidden;
+  }
+  .home-hero::after {
+    content: '§';
+    position: absolute; right: 60px; top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Playfair Display', serif;
+    font-size: 320px; font-weight: 800; font-style: italic;
+    color: rgba(255,255,255,0.04);
+    pointer-events: none; line-height: 1;
+    user-select: none;
+  }
+  .hero-label {
+    display: inline-block;
+    background: var(--terracotta);
+    color: #fff; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 4px;
+    margin-bottom: 28px;
+    animation: fadeUp 0.5s ease both;
+  }
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(40px, 7vw, 80px);
+    font-weight: 800; line-height: 1.05;
+    max-width: 700px;
+    margin-bottom: 16px;
+    animation: fadeUp 0.5s 0.1s ease both;
+  }
+  .hero-title em { font-style: italic; color: var(--gold); }
+  .hero-subtitle {
+    font-size: 17px; font-weight: 300;
+    color: rgba(255,255,255,0.65); max-width: 480px;
+    line-height: 1.7; margin-bottom: 40px;
+    animation: fadeUp 0.5s 0.2s ease both;
+  }
+  .hero-cta {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    animation: fadeUp 0.5s 0.3s ease both;
+  }
+
+  .btn-primary {
+    background: var(--terracotta); color: #fff;
+    font-family: 'Lato', sans-serif; font-size: 15px; font-weight: 700;
+    padding: 14px 30px; border-radius: 8px; border: none; cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary:hover { background: var(--terracotta-dark); transform: translateY(-1px); }
+
+  .btn-outline {
+    background: transparent; color: rgba(255,255,255,0.8);
+    font-family: 'Lato', sans-serif; font-size: 15px; font-weight: 700;
+    padding: 14px 30px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.25); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-outline:hover { border-color: rgba(255,255,255,0.6); color: #fff; }
+
+  .home-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 0; border-top: 1px solid var(--border);
+  }
+  @media(max-width: 640px) { .home-grid { grid-template-columns: 1fr; } }
+
+  .home-topic {
+    padding: 36px 40px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.15s;
+    background: var(--white);
+  }
+  .home-topic:nth-child(even) { border-right: none; }
+  .home-topic:hover { background: var(--cream); }
+
+  .ht-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 48px; font-weight: 700; font-style: italic;
+    color: var(--border); line-height: 1; margin-bottom: 10px;
+  }
+  .ht-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-weight: 700;
+    color: var(--slate); margin-bottom: 8px;
+  }
+  .ht-desc { font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .ht-tag {
+    display: inline-block; margin-top: 14px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 4px;
+  }
+
+  /* ===== MODE SELECT ===== */
+  .section-eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--terracotta);
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 44px); font-weight: 800;
+    color: var(--slate); margin-bottom: 8px; line-height: 1.15;
+  }
+  .section-sub { font-size: 16px; color: var(--muted); margin-bottom: 48px; font-weight: 300; }
+
+  .mode-cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px; max-width: 680px; width: 100%;
+  }
+
+  .mode-card {
+    background: var(--white); border: 2px solid var(--border);
+    border-radius: var(--radius); padding: 36px 30px;
+    cursor: pointer; text-align: left;
+    transition: all 0.2s;
+  }
+  .mode-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(45,63,80,0.12); }
+  .mode-card.learn:hover { border-color: var(--slate); }
+  .mode-card.quiz:hover { border-color: var(--terracotta); }
+
+  .mode-icon { font-size: 36px; margin-bottom: 18px; }
+  .mode-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700; color: var(--slate); margin-bottom: 8px;
+  }
+  .mode-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+  .mode-pill {
+    display: inline-block; margin-top: 18px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 5px 12px; border-radius: 4px;
+  }
+  .learn .mode-pill { background: var(--slate-light); color: var(--slate); }
+  .quiz .mode-pill { background: var(--terracotta-light); color: var(--terracotta-dark); }
+
+  /* ===== TOPIC SELECT ===== */
+  .topic-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px; max-width: 840px; width: 100%; margin-top: 0;
+  }
+
+  .topic-card {
+    background: var(--white); border: 2px solid var(--border);
+    border-radius: var(--radius); padding: 28px 24px;
+    cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .topic-card::before {
+    content: attr(data-num);
+    position: absolute; right: 16px; bottom: 8px;
+    font-family: 'Playfair Display', serif; font-size: 72px; font-weight: 800;
+    color: rgba(0,0,0,0.04); line-height: 1; pointer-events: none;
+    user-select: none;
+  }
+  .topic-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(45,63,80,0.1); }
+  .topic-card[data-color="slate"]:hover { border-color: var(--slate); }
+  .topic-card[data-color="terra"]:hover { border-color: var(--terracotta); }
+  .topic-card[data-color="gold"]:hover { border-color: var(--gold); }
+  .topic-card[data-color="green"]:hover { border-color: var(--green); }
+
+  .tc-icon { font-size: 30px; margin-bottom: 14px; }
+  .tc-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px; font-weight: 700; color: var(--slate); margin-bottom: 6px;
+  }
+  .tc-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .tc-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .tc-pill {
+    font-size: 11px; padding: 3px 10px; border-radius: 4px;
+    background: var(--cream); color: var(--muted); font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  /* ===== LESSON ===== */
+  #lesson-screen { padding: 90px 20px 60px; }
+
+  .lesson-wrap { max-width: 720px; margin: 0 auto; }
+
+  .lesson-progress-bar {
+    position: fixed; top: 57px; left: 0; right: 0; z-index: 99;
+    height: 4px; background: var(--border);
+  }
+  .lesson-progress-fill {
+    height: 100%; background: var(--terracotta);
+    transition: width 0.4s ease;
+  }
+
+  .lesson-meta {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 32px; padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .lesson-eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--terracotta);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .lesson-eyebrow::before {
+    content: ''; width: 20px; height: 2px; background: var(--terracotta);
+    display: inline-block;
+  }
+  .lesson-counter { font-size: 13px; color: var(--muted); }
+
+  .lesson-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(24px, 4vw, 36px); font-weight: 800;
+    color: var(--slate); line-height: 1.2; margin-bottom: 28px;
+  }
+
+  .lesson-body { font-size: 16px; line-height: 1.85; color: #3a4a56; }
+  .lesson-body p { margin-bottom: 18px; }
+  .lesson-body strong { color: var(--slate); font-weight: 700; }
+  .lesson-body ul { margin: 12px 0 18px 0; padding-left: 0; list-style: none; }
+  .lesson-body ul li {
+    padding: 6px 0 6px 22px; position: relative; font-size: 15px;
+  }
+  .lesson-body ul li::before {
+    content: '—'; position: absolute; left: 0; color: var(--terracotta); font-weight: 700;
+  }
+
+  .callout {
+    border-left: 3px solid var(--slate);
+    background: var(--slate-light);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px; margin: 20px 0;
+    font-size: 14px; line-height: 1.7;
+  }
+  .callout.terra { border-color: var(--terracotta); background: var(--terracotta-light); }
+  .callout.gold { border-color: var(--gold); background: var(--gold-light); }
+  .callout.green { border-color: var(--green); background: var(--green-light); }
+  .callout strong { display: block; margin-bottom: 4px; }
+
+  .definition-box {
+    background: var(--white); border: 1px solid var(--border);
+    border-top: 3px solid var(--gold);
+    border-radius: 8px; padding: 20px 24px; margin: 20px 0;
+  }
+  .definition-box .def-term {
+    font-family: 'Playfair Display', serif; font-weight: 700;
+    font-size: 16px; color: var(--slate); margin-bottom: 6px;
+  }
+  .definition-box .def-text { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+  .grid-2 {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0;
+  }
+  @media(max-width: 560px) { .grid-2 { grid-template-columns: 1fr; } }
+  .grid-item {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px;
+  }
+  .grid-item .gi-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+  }
+  .grid-item .gi-content { font-size: 14px; line-height: 1.6; color: var(--slate); }
+
+  .lesson-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--border);
+    gap: 12px;
+  }
+  .btn-lesson {
+    font-family: 'Lato', sans-serif; font-size: 14px; font-weight: 700;
+    padding: 12px 24px; border-radius: 8px; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-lesson.prev {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+  }
+  .btn-lesson.prev:hover { border-color: var(--slate); color: var(--slate); }
+  .btn-lesson.prev:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-lesson.next {
+    background: var(--slate); border: 1px solid var(--slate); color: #fff;
+  }
+  .btn-lesson.next:hover { background: var(--terracotta); border-color: var(--terracotta); }
+  .btn-lesson.go-quiz {
+    background: var(--terracotta); border: 1px solid var(--terracotta); color: #fff;
+  }
+  .btn-lesson.go-quiz:hover { background: var(--terracotta-dark); border-color: var(--terracotta-dark); }
+
+  /* ===== QUIZ ===== */
+  #quiz-screen { padding: 90px 20px 60px; }
+  .quiz-wrap { max-width: 680px; margin: 0 auto; }
+
+  .quiz-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 32px; padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .quiz-topic { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .quiz-score {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px; font-weight: 700; color: var(--green);
+  }
+
+  .quiz-q-num {
+    font-size: 12px; color: var(--muted); margin-bottom: 12px;
+    font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .quiz-question {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(18px, 3vw, 24px); font-weight: 700;
+    color: var(--slate); line-height: 1.4; margin-bottom: 30px;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option-btn {
+    background: var(--white); border: 2px solid var(--border);
+    color: var(--text); font-family: 'Lato', sans-serif;
+    font-size: 15px; font-weight: 400;
+    padding: 14px 18px; border-radius: 8px;
+    cursor: pointer; text-align: left; transition: all 0.15s;
+    display: flex; align-items: flex-start; gap: 14px;
+  }
+  .opt-letter {
+    width: 26px; height: 26px; border-radius: 4px; flex-shrink: 0;
+    background: var(--cream); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700;
+    transition: all 0.15s;
+  }
+  .option-btn:hover:not(:disabled) { border-color: var(--slate); background: var(--cream); }
+  .option-btn:hover:not(:disabled) .opt-letter { background: var(--slate); color: #fff; border-color: var(--slate); }
+  .option-btn.correct { border-color: var(--green) !important; background: var(--green-light) !important; }
+  .option-btn.correct .opt-letter { background: var(--green) !important; border-color: var(--green) !important; color: #fff !important; }
+  .option-btn.wrong { border-color: var(--terracotta) !important; background: var(--terracotta-light) !important; }
+  .option-btn.wrong .opt-letter { background: var(--terracotta) !important; border-color: var(--terracotta) !important; color: #fff !important; }
+  .option-btn:disabled { cursor: not-allowed; }
+
+  .feedback-box {
+    margin-top: 18px; padding: 16px 20px;
+    border-radius: 8px; font-size: 14px; line-height: 1.7;
+    display: none; border: 1px solid;
+  }
+  .feedback-box.correct { background: var(--green-light); border-color: rgba(58,125,90,0.3); color: #285a3e; }
+  .feedback-box.wrong { background: var(--terracotta-light); border-color: rgba(192,83,58,0.3); color: var(--terracotta-dark); }
+  .feedback-box strong { display: block; margin-bottom: 4px; }
+
+  .quiz-next-btn {
+    margin-top: 22px; width: 100%;
+    background: var(--slate); border: none; border-radius: 8px;
+    color: #fff; font-family: 'Lato', sans-serif;
+    font-size: 15px; font-weight: 700;
+    padding: 15px; cursor: pointer; display: none;
+    transition: background 0.15s;
+  }
+  .quiz-next-btn:hover { background: var(--terracotta); }
+
+  /* ===== RESULTS ===== */
+  .score-circle {
+    width: 150px; height: 150px; margin: 0 auto 32px;
+    position: relative;
+  }
+  .score-circle svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .score-circle circle { fill: none; stroke-width: 10; stroke-linecap: round; }
+  .score-circle .ring-bg { stroke: var(--border); }
+  .score-circle .ring-fg { stroke: var(--green); stroke-dasharray: 408; transition: stroke-dashoffset 1s ease; }
+  .score-num {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 800; color: var(--slate);
+  }
+
+  .result-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px; font-weight: 800; color: var(--slate); margin-bottom: 10px;
+  }
+  .result-sub { font-size: 16px; color: var(--muted); font-weight: 300; margin-bottom: 36px; }
+  .result-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .btn-result {
+    font-family: 'Lato', sans-serif; font-size: 14px; font-weight: 700;
+    padding: 13px 26px; border-radius: 8px; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-result.primary { background: var(--terracotta); color: #fff; border: none; }
+  .btn-result.primary:hover { background: var(--terracotta-dark); }
+  .btn-result.secondary { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-result.secondary:hover { border-color: var(--slate); color: var(--slate); }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .anim { animation: fadeUp 0.4s ease both; }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <div class="nav-brand"><span class="brand-dot"></span> LaborLex</div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <a class="nav-home" href="index.html">← Inicio</a>
+    <button class="nav-back" id="backBtn" onclick="goBack()">← Volver</button>
+  </div>
+</nav>
+
+<!-- ===== HOME ===== -->
+<div id="home" class="screen active">
+  <div class="home-hero">
+    <div class="hero-label">IPE I · Unidad 06</div>
+    <h1 class="hero-title">La <em>Relación</em><br>Laboral</h1>
+    <p class="hero-subtitle">Derecho laboral, fuentes normativas, derechos y deberes del trabajador, y organismos de protección.</p>
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="showScreen('mode-select')">Empezar ahora</button>
+      <button class="btn-outline" onclick="setMode('quiz'); showScreen('topic-select')">Solo Quiz ⚡</button>
+    </div>
+  </div>
+
+  <div class="home-grid">
+    <div class="home-topic" onclick="startLearnTopic(0)">
+      <div class="ht-num">01</div>
+      <div class="ht-name">Derecho Laboral</div>
+      <p class="ht-desc">Qué es, requisitos del trabajo regulado y actividades excluidas o especiales.</p>
+      <span class="ht-tag" style="background:var(--slate-light);color:var(--slate)">3 lecciones · 6 preguntas</span>
+    </div>
+    <div class="home-topic" onclick="startLearnTopic(1)">
+      <div class="ht-num">02</div>
+      <div class="ht-name">Fuentes del Derecho</div>
+      <p class="ht-desc">Jerarquía normativa, el convenio colectivo y principios de aplicación laboral.</p>
+      <span class="ht-tag" style="background:var(--terracotta-light);color:var(--terracotta-dark)">3 lecciones · 6 preguntas</span>
+    </div>
+    <div class="home-topic" onclick="startLearnTopic(2)">
+      <div class="ht-num">03</div>
+      <div class="ht-name">Derechos y Deberes</div>
+      <p class="ht-desc">Derechos generales, derechos laborales y obligaciones del trabajador/a.</p>
+      <span class="ht-tag" style="background:var(--gold-light);color:#8a6020">3 lecciones · 6 preguntas</span>
+    </div>
+    <div class="home-topic" onclick="startLearnTopic(3)">
+      <div class="ht-num">04</div>
+      <div class="ht-name">Organismos de Protección</div>
+      <p class="ht-desc">Inspección de Trabajo y Tribunales Laborales: funciones y jerarquía.</p>
+      <span class="ht-tag" style="background:var(--green-light);color:#285a3e">2 lecciones · 6 preguntas</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODE SELECT ===== -->
+<div id="mode-select" class="screen">
+  <div style="text-align:center;max-width:680px;width:100%">
+    <p class="section-eyebrow">Modo de estudio</p>
+    <h2 class="section-title">¿Cómo quieres<br>aprender hoy?</h2>
+    <p class="section-sub">Elige tu forma de estudiar</p>
+  </div>
+  <div class="mode-cards">
+    <div class="mode-card learn" onclick="showScreen('topic-select'); setMode('learn')">
+      <div class="mode-icon">📖</div>
+      <div class="mode-name">Lección + Quiz</div>
+      <p class="mode-desc">Lee los apuntes interactivos paso a paso y consolida lo aprendido con preguntas al final.</p>
+      <span class="mode-pill">Recomendado</span>
+    </div>
+    <div class="mode-card quiz" onclick="showScreen('topic-select'); setMode('quiz')">
+      <div class="mode-icon">⚡</div>
+      <div class="mode-name">Solo Quiz</div>
+      <p class="mode-desc">Pon a prueba directamente tus conocimientos con preguntas tipo test con feedback inmediato.</p>
+      <span class="mode-pill">Repaso rápido</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOPIC SELECT ===== -->
+<div id="topic-select" class="screen">
+  <div style="text-align:center;max-width:840px;width:100%;margin-bottom:36px">
+    <p class="section-eyebrow">Selecciona un bloque</p>
+    <h2 class="section-title">¿Qué tema quieres estudiar?</h2>
+  </div>
+  <div class="topic-grid">
+    <div class="topic-card" data-color="slate" data-num="01" onclick="selectTopic(0)">
+      <div class="tc-icon">⚖️</div>
+      <div class="tc-name">Derecho Laboral</div>
+      <p class="tc-desc">Definición, requisitos del trabajo regulado, exclusiones y relaciones especiales.</p>
+      <div class="tc-pills"><span class="tc-pill">Estatuto</span><span class="tc-pill">Requisitos</span><span class="tc-pill">Exclusiones</span></div>
+    </div>
+    <div class="topic-card" data-color="terra" data-num="02" onclick="selectTopic(1)">
+      <div class="tc-icon">🏛️</div>
+      <div class="tc-name">Fuentes del Derecho</div>
+      <p class="tc-desc">Jerarquía normativa, fuentes internas y externas, principios laborales específicos.</p>
+      <div class="tc-pills"><span class="tc-pill">Jerarquía</span><span class="tc-pill">Convenio</span><span class="tc-pill">Principios</span></div>
+    </div>
+    <div class="topic-card" data-color="gold" data-num="03" onclick="selectTopic(2)">
+      <div class="tc-icon">🤝</div>
+      <div class="tc-name">Derechos y Deberes</div>
+      <p class="tc-desc">Derechos fundamentales y laborales, obligaciones del trabajador según el E.T.</p>
+      <div class="tc-pills"><span class="tc-pill">Derechos</span><span class="tc-pill">Obligaciones</span><span class="tc-pill">ET</span></div>
+    </div>
+    <div class="topic-card" data-color="green" data-num="04" onclick="selectTopic(3)">
+      <div class="tc-icon">🔍</div>
+      <div class="tc-name">Organismos de Protección</div>
+      <p class="tc-desc">Inspección de Trabajo y tribunales laborales: composición, funciones y jerarquía.</p>
+      <div class="tc-pills"><span class="tc-pill">Inspección</span><span class="tc-pill">Tribunales</span><span class="tc-pill">Jerarquía</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LESSON SCREEN ===== -->
+<div id="lesson-screen" class="screen">
+  <div class="lesson-progress-bar"><div class="lesson-progress-fill" id="lessonFill"></div></div>
+  <div class="lesson-wrap">
+    <div id="lessonContent"></div>
+  </div>
+</div>
+
+<!-- ===== QUIZ SCREEN ===== -->
+<div id="quiz-screen" class="screen">
+  <div class="lesson-progress-bar"><div class="lesson-progress-fill" id="quizFill" style="background:var(--gold)"></div></div>
+  <div class="quiz-wrap">
+    <div class="quiz-header">
+      <span class="quiz-topic" id="quizTopic"></span>
+      <span class="quiz-score" id="quizScore">✓ 0 correctas</span>
+    </div>
+    <div class="quiz-q-num" id="quizQNum"></div>
+    <div class="quiz-question" id="quizQuestion"></div>
+    <div class="options" id="quizOptions"></div>
+    <div class="feedback-box" id="feedbackBox"></div>
+    <button class="quiz-next-btn" id="quizNextBtn" onclick="nextQuestion()">Siguiente →</button>
+  </div>
+</div>
+
+<!-- ===== RESULTS ===== -->
+<div id="results-screen" class="screen">
+  <div class="score-circle">
+    <svg viewBox="0 0 140 140">
+      <circle class="ring-bg" cx="70" cy="70" r="65"/>
+      <circle class="ring-fg" id="ringFg" cx="70" cy="70" r="65"/>
+    </svg>
+    <div class="score-num" id="scoreNum"></div>
+  </div>
+  <h2 class="result-title" id="resultTitle"></h2>
+  <p class="result-sub" id="resultSub"></p>
+  <div class="result-actions">
+    <button class="btn-result primary" onclick="repeatQuiz()">Repetir quiz</button>
+    <button class="btn-result secondary" onclick="showScreen('topic-select')">Otro tema</button>
+    <button class="btn-result secondary" onclick="showScreen('home')">Inicio</button>
+  </div>
+</div>
+
+<script>
+// ===================== DATA =====================
+const topics = [
+  {
+    name: "Derecho Laboral",
+    lessons: [
+      {
+        eyebrow: "Lección 1 · Derecho Laboral",
+        title: "¿Qué es el Derecho del Trabajo?",
+        content: `
+          <p>Vivir en sociedad genera conflictos. Para evitar el caos, existen normas que regulan la convivencia: eso es el <strong>Derecho</strong>. Dentro de él, el <strong>Derecho del Trabajo</strong> surge para regular las relaciones entre trabajadores y empresas.</p>
+          <div class="definition-box">
+            <div class="def-term">Estatuto de los Trabajadores (E.T.)</div>
+            <div class="def-text">Aprobado en 1980, es la ley básica que regula las relaciones laborales en España. Toda empresa y trabajador en régimen laboral queda sujeto a él.</div>
+          </div>
+          <p>Recuerda: <strong>«la ignorancia de la ley no exime de su cumplimiento»</strong>. Conocer tus derechos te hace un ciudadano/a más informado y menos manipulable.</p>
+          <p>El Derecho Laboral no regula cualquier trabajo, sino solo el que cumple <strong>5 requisitos</strong> fundamentales:</p>
+          <ul>
+            <li><strong>Personal:</strong> lo realiza la propia persona, no puede delegarse ni heredarse.</li>
+            <li><strong>Voluntario:</strong> nadie está obligado a trabajar, somos libres de elegir.</li>
+            <li><strong>Dependiente:</strong> bajo el mando y supervisión del empresario/a.</li>
+            <li><strong>Retribuido:</strong> a cambio de un salario. El voluntariado queda fuera.</li>
+            <li><strong>Por cuenta ajena:</strong> los frutos del trabajo pertenecen a la empresa.</li>
+          </ul>
+          <div class="callout terra">💡 <strong>Truco para recordarlos:</strong> usa las iniciales <em>P·V·D·R·C</em> — Personal, Voluntario, Dependiente, Retribuido, Cuenta ajena.</div>
+        `
+      },
+      {
+        eyebrow: "Lección 2 · Exclusiones",
+        title: "¿Qué actividades quedan fuera del Derecho Laboral?",
+        content: `
+          <p>El <strong>artículo 1 del E.T.</strong> excluye expresamente ciertas actividades porque no cumplen alguno de los 5 requisitos o por disposición legal expresa:</p>
+          <div class="grid-2">
+            <div class="grid-item">
+              <div class="gi-label">Excluidas por falta de requisitos</div>
+              <div class="gi-content">Trabajos de amistad o buena vecindad, voluntariado, trabajos familiares (hasta 2.º grado de parentesco).</div>
+            </div>
+            <div class="grid-item">
+              <div class="gi-label">Excluidas por ley</div>
+              <div class="gi-content">Funcionarios públicos, consejeros de sociedades, comisionistas con responsabilidad sobre el resultado, prestaciones personales obligatorias.</div>
+            </div>
+          </div>
+          <div class="callout gold">📌 <strong>Importante:</strong> Los trabajos familiares solo pueden ser laborales si se demuestra la condición de asalariado, aunque el parentesco llegue hasta el 2.º grado.</div>
+          <p>No confundas exclusión con <strong>relaciones laborales especiales</strong>: estas sí son trabajo retribuido por cuenta ajena, pero tienen normas propias distintas a las generales.</p>
+          <ul>
+            <li>Personal de alta dirección</li>
+            <li>Empleados del hogar familiar</li>
+            <li>Deportistas profesionales</li>
+            <li>Artistas en espectáculos públicos</li>
+            <li>Representantes de comercio</li>
+            <li>Penados en instituciones penitenciarias</li>
+            <li>Residentes sanitarios (MIR), entre otros</li>
+          </ul>
+        `
+      },
+      {
+        eyebrow: "Lección 3 · Resumen",
+        title: "Derecho Laboral: mapa completo",
+        content: `
+          <p>Antes de pasar al quiz, consolidemos todos los conceptos de este bloque:</p>
+          <div class="callout">
+            <strong>¿Qué regula el Derecho del Trabajo?</strong>
+            Solo el trabajo <em>personal, voluntario, dependiente, retribuido y por cuenta ajena</em>. Si falta cualquiera de estos elementos, no hay relación laboral.
+          </div>
+          <div class="callout terra">
+            <strong>Actividades excluidas (art. 1 E.T.)</strong>
+            Funcionarios, consejeros, comisionistas con riesgo, trabajos de amistad/vecindad, trabajos familiares (salvo prueba de asalariado), prestaciones obligatorias.
+          </div>
+          <div class="callout gold">
+            <strong>Relaciones laborales especiales</strong>
+            Son laborales, pero con normativa propia: alta dirección, hogar, deportistas, artistas, representantes de comercio, MIR, penados, etc.
+          </div>
+          <div class="callout green">
+            <strong>La norma base</strong>
+            El Estatuto de los Trabajadores (1980) es la columna vertebral. Conocerlo te protege como trabajador/a frente a posibles abusos.
+          </div>
+          <p>¿Listo/a? Pulsa el botón para demostrar lo que has aprendido.</p>
+        `
+      }
+    ],
+    quiz: [
+      {
+        q: "¿Cuál de los siguientes requisitos NO es necesario para que una relación sea laboral?",
+        opts: ["Que sea retribuida", "Que sea por cuenta ajena", "Que sea presencial en un centro de trabajo", "Que sea dependiente"],
+        correct: 2,
+        explain: "Los 5 requisitos son: personal, voluntario, dependiente, retribuido y por cuenta ajena. El lugar de prestación (presencial o teletrabajo) no es un requisito para que exista relación laboral."
+      },
+      {
+        q: "Un estudiante realiza prácticas no remuneradas en una empresa. ¿Está protegido por el Derecho Laboral?",
+        opts: ["Sí, siempre que firme un convenio de prácticas", "No, porque no cumple el requisito de ser retribuido", "Sí, si las prácticas duran más de 3 meses", "No, porque no es mayor de edad"],
+        correct: 1,
+        explain: "El Derecho Laboral solo protege el trabajo retribuido (a cambio de salario). Las prácticas no remuneradas quedan fuera de su ámbito, aunque puedan estar reguladas por otras normas educativas."
+      },
+      {
+        q: "Una persona trabaja diariamente en el negocio familiar de sus padres sin cobrar salario. ¿Es una relación laboral?",
+        opts: ["Sí, porque trabaja de forma regular", "No, porque es un trabajo familiar no remunerado", "Sí, si trabaja más de 20 horas semanales", "Depende del convenio colectivo aplicable"],
+        correct: 1,
+        explain: "Los trabajos familiares hasta el 2.º grado de consanguinidad y afinidad están excluidos del E.T. (art. 1). Solo serían laborales si se demuestra la condición de asalariado, lo que aquí no se cumple al no haber remuneración."
+      },
+      {
+        q: "¿En qué se diferencia una 'actividad excluida' de una 'relación laboral especial'?",
+        opts: ["No hay diferencia, son sinónimos", "La excluida no tiene protección laboral alguna; la especial sí, pero con normativa propia", "La especial no cobra salario", "La excluida solo afecta a los funcionarios"],
+        correct: 1,
+        explain: "Las actividades excluidas (funcionarios, comisionistas…) no están en el ámbito del E.T. Las relaciones especiales (deportistas, artistas, hogar…) sí son relaciones laborales, pero con una regulación específica diferente a la general."
+      },
+      {
+        q: "¿Cuál de estos colectivos tiene una relación laboral ESPECIAL según el E.T.?",
+        opts: ["Los funcionarios de carrera", "Los miembros del Consejo de Administración de una S.A.", "Los deportistas profesionales", "Los voluntarios de una ONG"],
+        correct: 2,
+        explain: "Los deportistas profesionales tienen una relación laboral especial regulada por RD 1006/1985. Los funcionarios y consejeros están excluidos del ámbito laboral; los voluntarios no perciben salario, por lo que tampoco tienen relación laboral."
+      },
+      {
+        q: "¿Qué norma constituye la regulación básica de las relaciones laborales en España?",
+        opts: ["La Constitución Española de 1978", "El Estatuto de los Trabajadores de 1980", "El Código Civil", "La Ley Orgánica de Libertad Sindical"],
+        correct: 1,
+        explain: "El Estatuto de los Trabajadores (ET), aprobado en 1980, es la norma central que regula las relaciones laborales ordinarias en España, aunque está subordinado a la Constitución y al Derecho Comunitario."
+      }
+    ]
+  },
+  {
+    name: "Fuentes del Derecho",
+    lessons: [
+      {
+        eyebrow: "Lección 1 · Jerarquía Normativa",
+        title: "Las fuentes del Derecho Laboral y su jerarquía",
+        content: `
+          <p>Las <strong>fuentes del Derecho</strong> son las distintas formas en que se expresa la norma jurídica. En el ámbito laboral se aplican en orden de mayor a menor rango:</p>
+          <div class="callout">
+            <strong>Principio de jerarquía:</strong> la norma superior prevalece sobre la inferior. La inferior nunca puede empeorar lo que establece la superior.
+          </div>
+          <div class="callout terra">
+            <strong>Principio de modernidad:</strong> la norma posterior deroga a la anterior del mismo o inferior rango.
+          </div>
+          <p>El orden jerárquico de las fuentes, de mayor a menor rango, es:</p>
+          <ul>
+            <li><strong>Derecho Comunitario Europeo</strong> (Reglamentos, Directivas, Decisiones…)</li>
+            <li><strong>Constitución Española</strong></li>
+            <li><strong>Tratados y Convenios Internacionales</strong> (OIT…)</li>
+            <li><strong>Leyes</strong> (Orgánicas → Ordinarias → Decretos legislativos → Decretos ley)</li>
+            <li><strong>Reglamentos</strong> (Decretos, Órdenes ministeriales, Resoluciones)</li>
+            <li><strong>Convenio Colectivo</strong></li>
+            <li><strong>Contrato de Trabajo</strong></li>
+            <li><strong>Usos y Costumbres</strong> (locales y profesionales)</li>
+          </ul>
+          <div class="definition-box">
+            <div class="def-term">OIT — Organización Internacional del Trabajo</div>
+            <div class="def-text">Creada en 1919, tiene composición tripartita (Estados, empresarios y trabajadores). Su misión: mejorar las condiciones de trabajo y eliminar desigualdades entre países.</div>
+          </div>
+        `
+      },
+      {
+        eyebrow: "Lección 2 · Tipos de Normas",
+        title: "Leyes, reglamentos, convenio y contrato",
+        content: `
+          <p>Dentro de las <strong>leyes</strong> existen varios tipos según su origen y aprobación:</p>
+          <div class="grid-2">
+            <div class="grid-item">
+              <div class="gi-label">Leyes Orgánicas</div>
+              <div class="gi-content">Materias fundamentales (derechos fundamentales, EEAA, régimen electoral). Requieren mayoría absoluta (176 votos).</div>
+            </div>
+            <div class="grid-item">
+              <div class="gi-label">Leyes Ordinarias</div>
+              <div class="gi-content">El resto de materias. Se aprueban por mayoría simple de los presentes.</div>
+            </div>
+            <div class="grid-item">
+              <div class="gi-label">Decreto Legislativo</div>
+              <div class="gi-content">El Ejecutivo legisla por delegación del Parlamento. Puede ser Texto Articulado o Texto Refundido.</div>
+            </div>
+            <div class="grid-item">
+              <div class="gi-label">Decreto Ley</div>
+              <div class="gi-content">Por urgencia extraordinaria. El Parlamento debe aprobarlo en máximo 30 días.</div>
+            </div>
+          </div>
+          <div class="callout gold">
+            <strong>El Convenio Colectivo</strong> es el acuerdo entre representantes de trabajadores y empresa para regular condiciones laborales. Obliga a <em>todas</em> las empresas y trabajadores dentro de su ámbito. Si hay varios aplicables, prevalece el más posterior y el más específico.
+          </div>
+          <p>Por debajo del convenio está el <strong>contrato de trabajo</strong>: pacto individual que nunca puede empeorar lo establecido en el convenio. Y en último lugar, los <strong>usos y costumbres</strong> locales y profesionales, que solo se aplican si no existe norma escrita.</p>
+        `
+      },
+      {
+        eyebrow: "Lección 3 · Principios Laborales",
+        title: "Principios especiales del orden laboral",
+        content: `
+          <p>En el Derecho Laboral, la jerarquía estricta se <strong>modera</strong> mediante cinco principios exclusivos de este ámbito que protegen al trabajador:</p>
+          <div class="callout">
+            <strong>In dubio pro operario</strong><br>
+            Cuando una norma admite varias interpretaciones, se aplica la más favorable al trabajador/a.
+          </div>
+          <div class="callout terra">
+            <strong>Norma mínima</strong><br>
+            Las normas superiores fijan un suelo que las inferiores no pueden rebajar. El contrato no puede empeorar el convenio; el convenio no puede empeorar la ley.
+          </div>
+          <div class="callout gold">
+            <strong>Norma más favorable</strong><br>
+            Si dos normas son aplicables, se aplica la más favorable al trabajador en su conjunto y en cómputo anual, aunque sea de menor rango.
+          </div>
+          <div class="callout green">
+            <strong>Condición más beneficiosa</strong><br>
+            Los derechos ya adquiridos individualmente se mantienen aunque aparezca después una norma menos favorable.
+          </div>
+          <div class="callout" style="border-color:var(--slate);background:var(--slate-light)">
+            <strong>Irrenunciabilidad de derechos</strong><br>
+            El trabajador no puede renunciar a derechos concedidos por ley o convenio. Sí puede renunciar a lo pactado solo en su contrato individual.
+          </div>
+        `
+      }
+    ],
+    quiz: [
+      {
+        q: "¿Qué tipo de norma europea es de aplicación obligatoria y directa en todos los Estados miembros sin necesidad de transposición?",
+        opts: ["La Directiva", "El Reglamento", "La Decisión", "La Recomendación"],
+        correct: 1,
+        explain: "Los Reglamentos europeos son directamente aplicables en todos los Estados miembros sin necesidad de ser incorporados al ordenamiento nacional. Las Directivas, en cambio, fijan objetivos pero requieren que cada Estado las transponga mediante una ley interna."
+      },
+      {
+        q: "¿Cuántos votos favorables son necesarios para aprobar una Ley Orgánica en el Congreso de los Diputados?",
+        opts: ["La mitad más uno de los presentes", "Dos tercios del total", "176 votos (mayoría absoluta)", "La unanimidad"],
+        correct: 2,
+        explain: "Las Leyes Orgánicas requieren mayoría absoluta: la mitad más uno del total de diputados (350), es decir, al menos 176 votos favorables, independientemente de cuántos estén presentes en la sesión."
+      },
+      {
+        q: "Un convenio colectivo fija 25 días de vacaciones anuales. El contrato de trabajo pactado con un empleado establece 20 días. ¿Cuántos días de vacaciones corresponden?",
+        opts: ["20 días, porque así lo acordaron", "25 días, por el principio de norma mínima", "Los que diga el empresario en cada caso", "23 días como término medio"],
+        correct: 1,
+        explain: "Por el principio de norma mínima, el contrato de trabajo no puede empeorar lo establecido en el convenio colectivo. Los 25 días fijados en el convenio son el mínimo garantizado; el pacto contractual de 20 días es nulo en este punto."
+      },
+      {
+        q: "¿Qué principio laboral permite aplicar una norma de rango inferior sobre una de rango superior?",
+        opts: ["Principio de jerarquía", "Principio de modernidad", "Norma más favorable", "In dubio pro operario"],
+        correct: 2,
+        explain: "El principio de norma más favorable permite aplicar la norma más ventajosa para el trabajador aunque sea de rango inferior, siempre que se compare en su conjunto y en cómputo anual. Es una excepción al principio general de jerarquía."
+      },
+      {
+        q: "¿Qué es un Decreto Ley?",
+        opts: ["Una ley aprobada por el Senado con carácter urgente", "Una norma del Ejecutivo por razones de urgencia que el Parlamento debe ratificar en 30 días", "Un reglamento del Consejo de Ministros", "Una ley delegada aprobada a partir de una ley de bases"],
+        correct: 1,
+        explain: "El Decreto Ley es una norma con rango de ley que el Gobierno puede dictar por razones de extraordinaria y urgente necesidad. Debe ser sometido al Congreso en un plazo máximo de 30 días para su convalidación o derogación."
+      },
+      {
+        q: "Un trabajador lleva años disfrutando de una paga extra de productividad que no figura en el convenio. El convenio nuevo la elimina. ¿La pierde?",
+        opts: ["Sí, el convenio nuevo prevalece siempre", "No, por el principio de condición más beneficiosa", "Depende de si la empresa lo decide", "Sí, porque los usos y costumbres no son vinculantes"],
+        correct: 1,
+        explain: "El principio de condición más beneficiosa garantiza que los derechos adquiridos individualmente por el trabajador se mantengan, aunque una norma posterior (incluso un convenio) establezca condiciones menos favorables."
+      }
+    ]
+  },
+  {
+    name: "Derechos y Deberes",
+    lessons: [
+      {
+        eyebrow: "Lección 1 · Derechos Generales",
+        title: "Derechos fundamentales del trabajador",
+        content: `
+          <p>Los derechos de los trabajadores/as están reconocidos en la <strong>Constitución Española</strong> y desarrollados en el <strong>Estatuto de los Trabajadores</strong>. Los más importantes son los derechos fundamentales, que tienen la máxima protección jurídica:</p>
+          <ul>
+            <li><strong>Derecho al trabajo</strong> y a elegir libremente profesión u oficio.</li>
+            <li><strong>Derecho a la libre sindicación</strong>: afiliarse o no a un sindicato, y al que elija.</li>
+            <li><strong>Derecho a la huelga</strong>: herramienta de presión colectiva ante conflictos laborales.</li>
+            <li><strong>Derecho a la negociación colectiva</strong>: participar en la elaboración de convenios.</li>
+            <li><strong>Derecho a la adopción de medidas de conflicto colectivo.</strong></li>
+            <li><strong>Derecho de reunión</strong> en el centro de trabajo.</li>
+            <li><strong>Derecho a la participación en la empresa</strong> a través de representantes.</li>
+            <li><strong>Derecho a la igualdad</strong> y no discriminación.</li>
+          </ul>
+          <div class="callout green">
+            💡 Estos derechos son <strong>irrenunciables</strong>: el trabajador no puede firmar nada que los elimine, aunque quisiera. Cualquier cláusula contractual que los suprima es nula de pleno derecho.
+          </div>
+        `
+      },
+      {
+        eyebrow: "Lección 2 · Derechos Laborales",
+        title: "Derechos derivados de la relación laboral",
+        content: `
+          <p>Además de los derechos generales, el <strong>E.T.</strong> reconoce derechos específicos que nacen con el contrato de trabajo:</p>
+          <div class="callout">
+            <strong>Ocupación efectiva:</strong> el trabajador tiene derecho a tareas y funciones concretas y a los medios necesarios para realizarlas. El empresario no puede dejarte «sin trabajo» como sanción informal.
+          </div>
+          <div class="callout terra">
+            <strong>Formación y promoción profesional:</strong> derecho a crecer dentro de la empresa y a recibir formación vinculada al puesto.
+          </div>
+          <div class="callout gold">
+            <strong>No discriminación:</strong> por sexo, estado civil, edad, raza, condición social, ideas religiosas o políticas, orientación sexual, discapacidad, lengua o afiliación sindical.
+          </div>
+          <div class="callout green">
+            <strong>Integridad física y seguridad:</strong> el empresario debe garantizar un entorno de trabajo seguro e higiénico.
+          </div>
+          <div class="callout" style="border-color:var(--slate);background:var(--slate-light)">
+            <strong>Intimidad y dignidad:</strong> protección frente a ofensas verbales, acoso sexual o acoso por razón de sexo.
+          </div>
+          <p>Y los más básicos: <strong>cobrar el salario puntualmente</strong> y poder ejercer las <strong>acciones legales</strong> derivadas del contrato.</p>
+        `
+      },
+      {
+        eyebrow: "Lección 3 · Obligaciones",
+        title: "Las obligaciones del trabajador/a",
+        content: `
+          <p>La relación laboral genera también <strong>obligaciones</strong> para el trabajador. El incumplimiento puede ser causa de sanción disciplinaria o incluso de despido:</p>
+          <ul>
+            <li><strong>Cumplir con diligencia y buena fe</strong> las obligaciones del puesto de trabajo.</li>
+            <li><strong>Observar las medidas de seguridad e higiene</strong> establecidas en el centro de trabajo.</li>
+            <li><strong>Cumplir las órdenes del empresario</strong>, siempre que sean legales, no pongan en riesgo la salud, y se refieran a la actividad laboral.</li>
+            <li><strong>No competir con el empresario</strong> para quien trabaja (pacto de no competencia).</li>
+            <li><strong>Contribuir a la mejora de la productividad</strong> y demás deberes del contrato.</li>
+          </ul>
+          <div class="callout terra">
+            ⚠️ <strong>Límite clave:</strong> el trabajador <em>no</em> está obligado a cumplir órdenes que sean ilegales, que supongan un riesgo grave para su salud, o que sean ajenas al objeto del contrato. En esos casos, puede negarse sin consecuencias disciplinarias.
+          </div>
+          <div class="callout gold">
+            📌 <strong>Para recordar:</strong> los derechos son irrenunciables, pero las obligaciones son exigibles. El equilibrio entre ambos define una relación laboral sana y justa.
+          </div>
+        `
+      }
+    ],
+    quiz: [
+      {
+        q: "¿Puede un trabajador firmar en su contrato que renuncia a afiliarse a cualquier sindicato?",
+        opts: ["Sí, si lo firma voluntariamente", "No, porque la libre sindicación es un derecho irrenunciable", "Sí, durante el periodo de prueba", "Depende del convenio colectivo aplicable"],
+        correct: 1,
+        explain: "El derecho a la libre sindicación es un derecho fundamental (art. 28 CE) e irrenunciable. Cualquier cláusula contractual que lo suprima es nula de pleno derecho, aunque el trabajador la haya firmado voluntariamente."
+      },
+      {
+        q: "¿Qué derecho ampara a un trabajador al que su empresa deja sin tareas ni funciones asignadas?",
+        opts: ["Derecho a la promoción profesional", "Derecho a la ocupación efectiva", "Derecho a la intimidad", "Derecho de reunión"],
+        correct: 1,
+        explain: "El derecho a la ocupación efectiva garantiza que el trabajador tenga tareas y funciones concretas en su puesto. Dejar a alguien sin trabajo puede ser considerado una modificación sustancial o incluso acoso, y el trabajador puede reclamarlo."
+      },
+      {
+        q: "Una empresa niega un ascenso a una trabajadora alegando que «las mujeres se cogen más bajas». ¿Qué derecho viola?",
+        opts: ["Derecho a la formación profesional", "Derecho a la no discriminación por razón de sexo", "Derecho a la intimidad", "Derecho de huelga"],
+        correct: 1,
+        explain: "Esta conducta viola el derecho a la no discriminación por razón de sexo, reconocido en el E.T. y en la CE. Es discriminación directa: tomar una decisión desfavorable basándose en el sexo de la persona trabajadora."
+      },
+      {
+        q: "Un jefe ordena a un trabajador de almacén que limpie el baño de la oficina sin equipo de protección adecuado. ¿Debe obedecer?",
+        opts: ["Sí, siempre hay que obedecer al jefe", "No, porque la orden supone un riesgo para su salud sin los medios adecuados", "Sí, pero puede quejarse después", "Solo si el convenio no lo prohíbe"],
+        correct: 1,
+        explain: "El trabajador no está obligado a cumplir órdenes que supongan un riesgo grave para su salud o integridad física. Puede negarse legítimamente y comunicarlo a la Inspección de Trabajo si la situación persiste."
+      },
+      {
+        q: "¿Cuál de las siguientes es una obligación del trabajador según el E.T.?",
+        opts: ["Cobrar el salario puntualmente", "No competir con el empresario para quien trabaja", "Tener derecho a la ocupación efectiva", "Poder ejercer la huelga"],
+        correct: 1,
+        explain: "No competir con el empresario es una obligación del trabajador, no un derecho. Las otras opciones (cobro de salario, ocupación efectiva, huelga) son derechos reconocidos por el E.T. y la Constitución."
+      },
+      {
+        q: "¿A qué se refiere el derecho a la 'integridad física' en el trabajo?",
+        opts: ["A cobrar el salario íntegro sin descuentos", "A que el empresario garantice condiciones de trabajo seguras e higiénicas", "A no hacer horas extra", "A mantener el mismo puesto de trabajo durante el contrato"],
+        correct: 1,
+        explain: "El derecho a la integridad física implica que el empresario tiene la obligación de proporcionar un entorno de trabajo seguro e higiénico, con los medios de protección necesarios. Está vinculado a la normativa de Prevención de Riesgos Laborales."
+      }
+    ]
+  },
+  {
+    name: "Organismos de Protección",
+    lessons: [
+      {
+        eyebrow: "Lección 1 · Inspección de Trabajo",
+        title: "La Inspección de Trabajo y Seguridad Social",
+        content: `
+          <p>La <strong>Inspección de Trabajo y Seguridad Social (ITSS)</strong> es el órgano de la Administración del Estado encargado de <strong>vigilar el cumplimiento</strong> de la legislación laboral, de prevención de riesgos, de Seguridad Social y de empleo.</p>
+          <div class="callout green">
+            <strong>¿Qué pueden hacer los inspectores?</strong><br>
+            Entrar libremente en cualquier centro de trabajo, de día y de noche, sin previo aviso. Investigar, solicitar documentación, entrevistar a trabajadores y empresas, tomar muestras, etc.
+          </div>
+          <div class="callout terra">
+            <strong>¿Qué pueden imponer?</strong><br>
+            Actas de infracción (sanciones económicas), actas de liquidación (cuotas de SS no ingresadas), requerimientos de subsanación, e incluso <strong>paralización inmediata</strong> de trabajos cuando haya riesgo grave para la vida o salud.
+          </div>
+          <p>Los trabajadores pueden <strong>denunciar</strong> ante la Inspección de forma anónima y confidencial. El empresario no puede tomar represalias por ello.</p>
+          <div class="definition-box">
+            <div class="def-term">Acta de infracción</div>
+            <div class="def-text">Documento levantado por el inspector que recoge el incumplimiento detectado y propone la sanción correspondiente según la LISOS (Ley de Infracciones y Sanciones en el Orden Social).</div>
+          </div>
+        `
+      },
+      {
+        eyebrow: "Lección 2 · Tribunales Laborales",
+        title: "Los tribunales que resuelven conflictos laborales",
+        content: `
+          <p>Cuando un conflicto entre trabajador y empresa no se resuelve por la vía extrajudicial, intervienen los <strong>Tribunales del orden social</strong>, organizados jerárquicamente de menor a mayor rango:</p>
+          <div class="callout">
+            <strong>1.º Juzgados de lo Social</strong><br>
+            Resuelven conflictos <em>individuales y colectivos</em> dentro del ámbito provincial. Es la primera instancia para la mayoría de reclamaciones laborales.
+          </div>
+          <div class="callout terra">
+            <strong>2.º Tribunal Superior de Justicia (TSJ) de la CC.AA.</strong><br>
+            Resuelven los recursos de súplica contra resoluciones de los Juzgados de lo Social. Hay uno en cada comunidad autónoma.
+          </div>
+          <div class="callout gold">
+            <strong>3.º Audiencia Nacional</strong><br>
+            Resuelve conflictos en materia sindical y colectiva cuyo ámbito supera el de una sola provincia.
+          </div>
+          <div class="callout green">
+            <strong>4.º Tribunal Supremo (Sala de lo Social)</strong><br>
+            Resuelve los recursos de casación contra sentencias de los TSJ y de la Audiencia Nacional. Crea jurisprudencia.
+          </div>
+          <div class="callout" style="border-color:var(--slate);background:var(--slate-light)">
+            💡 <strong>Antes de ir al juzgado</strong>, es obligatorio intentar la mediación o conciliación ante el SMAC (Servicio de Mediación, Arbitraje y Conciliación). Si no hay acuerdo, entonces se acude al Juzgado de lo Social.
+          </div>
+        `
+      }
+    ],
+    quiz: [
+      {
+        q: "¿Quién puede denunciar irregularidades laborales ante la Inspección de Trabajo?",
+        opts: ["Solo los sindicatos", "Solo el propio trabajador afectado", "Cualquier persona, incluso de forma anónima", "Solo el representante legal del trabajador"],
+        correct: 2,
+        explain: "Cualquier persona puede presentar una denuncia ante la Inspección de Trabajo, incluso de forma anónima. La ITSS tiene obligación de investigar y garantiza la confidencialidad del denunciante."
+      },
+      {
+        q: "Un inspector de trabajo detecta un riesgo grave e inminente para la vida de los trabajadores. ¿Qué puede hacer?",
+        opts: ["Solo levantar acta y esperar la resolución judicial", "Ordenar la paralización inmediata de los trabajos", "Informar al empresario y darle un plazo de 30 días para corregirlo", "Nada, hasta que haya una sentencia firme"],
+        correct: 1,
+        explain: "Cuando existe riesgo grave e inminente, la Inspección de Trabajo puede ordenar la paralización inmediata de los trabajos afectados, incluso antes de que haya sanción. Es una medida cautelar para proteger la vida e integridad de los trabajadores."
+      },
+      {
+        q: "¿Ante qué tribunal se presenta normalmente una reclamación individual por despido improcedente?",
+        opts: ["La Audiencia Nacional", "El Tribunal Supremo", "El Juzgado de lo Social", "El Tribunal Superior de Justicia de la CC.AA."],
+        correct: 2,
+        explain: "Los conflictos individuales (como un despido) se presentan en primera instancia ante el Juzgado de lo Social de la provincia correspondiente, que es el órgano de entrada del orden jurisdiccional social."
+      },
+      {
+        q: "¿Qué órgano judicial crea jurisprudencia en materia laboral con sus sentencias?",
+        opts: ["El Juzgado de lo Social", "El Tribunal Superior de Justicia de la CC.AA.", "La Audiencia Nacional", "El Tribunal Supremo"],
+        correct: 3,
+        explain: "La jurisprudencia en sentido estricto la crea el Tribunal Supremo (Sala de lo Social) mediante sus sentencias reiteradas en recursos de casación. Sus criterios son vinculantes para los tribunales inferiores."
+      },
+      {
+        q: "¿Qué debe hacerse obligatoriamente ANTES de presentar una demanda en el Juzgado de lo Social?",
+        opts: ["Contratar un abogado laboral colegiado", "Acudir al SMAC para intentar la conciliación", "Presentar una denuncia a la Inspección de Trabajo", "Comunicarlo por escrito al empresario con 15 días de antelación"],
+        correct: 1,
+        explain: "Con carácter previo a la demanda judicial, es obligatorio intentar la conciliación o mediación ante el SMAC (Servicio de Mediación, Arbitraje y Conciliación). Solo si no hay acuerdo puede acudirse al juzgado."
+      },
+      {
+        q: "¿Qué tribunal resuelve un conflicto colectivo cuyo ámbito afecta a varias provincias de distintas comunidades autónomas?",
+        opts: ["El Juzgado de lo Social de Madrid", "El TSJ de la comunidad más afectada", "La Audiencia Nacional", "El Tribunal Constitucional"],
+        correct: 2,
+        explain: "La Audiencia Nacional es competente en materia sindical y colectiva cuando el conflicto supera el ámbito de una sola provincia. Para conflictos que afecten a varias CC.AA., corresponde a la Audiencia Nacional."
+      }
+    ]
+  }
+];
+
+// ===================== STATE =====================
+let currentMode = 'learn';
+let currentTopicIdx = 0;
+let currentLessonIdx = 0;
+let currentQuizIdx = 0;
+let quizScore = 0;
+let quizQuestions = [];
+let navHistory = [];
+
+// ===================== NAVIGATION =====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('backBtn').classList.toggle('visible', id !== 'home');
+  navHistory.push(id);
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
+
+function goBack() {
+  navHistory.pop();
+  const prev = navHistory.length ? navHistory[navHistory.length - 1] : 'home';
+  navHistory.pop();
+  showScreen(prev);
+}
+
+function setMode(m) { currentMode = m; }
+
+function selectTopic(idx) {
+  currentTopicIdx = idx;
+  if (currentMode === 'learn') { currentLessonIdx = 0; renderLesson(); }
+  else startQuiz();
+}
+
+function startLearnTopic(idx) {
+  currentMode = 'learn';
+  currentTopicIdx = idx;
+  currentLessonIdx = 0;
+  navHistory = ['home'];
+  renderLesson();
+}
+
+// ===================== LESSONS =====================
+function renderLesson() {
+  showScreen('lesson-screen');
+  const topic = topics[currentTopicIdx];
+  const lesson = topic.lessons[currentLessonIdx];
+  const total = topic.lessons.length;
+  const pct = ((currentLessonIdx + 1) / (total + 1)) * 100;
+  const isLast = currentLessonIdx === total - 1;
+
+  document.getElementById('lessonFill').style.width = pct + '%';
+
+  document.getElementById('lessonContent').innerHTML = `
+    <div class="lesson-meta anim">
+      <span class="lesson-eyebrow">${lesson.eyebrow}</span>
+      <span class="lesson-counter">Lección ${currentLessonIdx + 1} de ${total}</span>
+    </div>
+    <h2 class="lesson-title anim">${lesson.title}</h2>
+    <div class="lesson-body anim">${lesson.content}</div>
+    <div class="lesson-nav anim">
+      <button class="btn-lesson prev" onclick="prevLesson()" ${currentLessonIdx === 0 ? 'disabled' : ''}>← Anterior</button>
+      <button class="btn-lesson ${isLast ? 'go-quiz' : 'next'}" onclick="${isLast ? 'startQuiz()' : 'nextLesson()'}">
+        ${isLast ? '✏️ Ir al Quiz' : 'Siguiente →'}
+      </button>
+    </div>
+  `;
+}
+
+function nextLesson() { currentLessonIdx++; renderLesson(); }
+function prevLesson() { if (currentLessonIdx > 0) { currentLessonIdx--; renderLesson(); } }
+
+// ===================== QUIZ =====================
+function startQuiz() {
+  currentQuizIdx = 0;
+  quizScore = 0;
+  quizQuestions = [...topics[currentTopicIdx].quiz];
+  renderQuestion();
+}
+
+function renderQuestion() {
+  showScreen('quiz-screen');
+  const q = quizQuestions[currentQuizIdx];
+  const total = quizQuestions.length;
+  const pct = (currentQuizIdx / total) * 100;
+
+  document.getElementById('quizFill').style.width = pct + '%';
+  document.getElementById('quizTopic').textContent = topics[currentTopicIdx].name;
+  document.getElementById('quizScore').textContent = `✓ ${quizScore} correcta${quizScore !== 1 ? 's' : ''}`;
+  document.getElementById('quizQNum').textContent = `Pregunta ${currentQuizIdx + 1} de ${total}`;
+  document.getElementById('quizQuestion').textContent = q.q;
+  document.getElementById('feedbackBox').style.display = 'none';
+  document.getElementById('quizNextBtn').style.display = 'none';
+
+  const letters = ['A','B','C','D'];
+  document.getElementById('quizOptions').innerHTML = q.opts.map((opt, i) => `
+    <button class="option-btn" onclick="answerQ(${i})">
+      <span class="opt-letter">${letters[i]}</span>
+      <span>${opt}</span>
+    </button>
+  `).join('');
+}
+
+function answerQ(idx) {
+  const q = quizQuestions[currentQuizIdx];
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+
+  const ok = idx === q.correct;
+  if (ok) quizScore++;
+
+  btns[idx].classList.add(ok ? 'correct' : 'wrong');
+  if (!ok) btns[q.correct].classList.add('correct');
+
+  const fb = document.getElementById('feedbackBox');
+  fb.className = 'feedback-box ' + (ok ? 'correct' : 'wrong');
+  fb.innerHTML = `<strong>${ok ? '✅ ¡Correcto!' : '❌ Incorrecto.'}</strong>${q.explain}`;
+  fb.style.display = 'block';
+
+  document.getElementById('quizScore').textContent = `✓ ${quizScore} correcta${quizScore !== 1 ? 's' : ''}`;
+
+  const nextBtn = document.getElementById('quizNextBtn');
+  const isLast = currentQuizIdx === quizQuestions.length - 1;
+  nextBtn.textContent = isLast ? '📊 Ver resultados' : 'Siguiente →';
+  nextBtn.style.display = 'block';
+}
+
+function nextQuestion() {
+  currentQuizIdx++;
+  if (currentQuizIdx >= quizQuestions.length) showResults();
+  else renderQuestion();
+}
+
+// ===================== RESULTS =====================
+function showResults() {
+  showScreen('results-screen');
+  const total = quizQuestions.length;
+  const pct = Math.round((quizScore / total) * 100);
+  const circumference = 2 * Math.PI * 65;
+  const offset = circumference - (pct / 100) * circumference;
+
+  document.getElementById('scoreNum').textContent = `${quizScore}/${total}`;
+  const ring = document.getElementById('ringFg');
+  ring.style.strokeDashoffset = circumference;
+  ring.style.stroke = pct >= 66 ? 'var(--green)' : pct >= 33 ? 'var(--gold)' : 'var(--terracotta)';
+  setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
+
+  let title, sub;
+  if (pct === 100) { title = '¡Sobresaliente! 🏆'; sub = 'Dominas este bloque a la perfección.'; }
+  else if (pct >= 66) { title = '¡Muy bien! 👏'; sub = 'Buen resultado. Repasa los conceptos que fallaste.'; }
+  else if (pct >= 33) { title = 'Sigue practicando 💪'; sub = 'Hay conceptos que afianzar. Vuelve a las lecciones.'; }
+  else { title = 'A repasar 📖'; sub = 'Te recomendamos leer las lecciones antes de repetir el quiz.'; }
+
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultSub').textContent = sub;
+}
+
+function repeatQuiz() { startQuiz(); }
+</script>
+</body>
+</html>
