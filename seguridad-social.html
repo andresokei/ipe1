@@ -147,9 +147,9 @@ tbody tr:nth-child(even) td{background:var(--cream)}
 .ranking-meta{font-size:11px;color:var(--muted);text-align:right;line-height:1.4}
 .ranking-empty{padding:40px 28px;text-align:center;color:var(--muted);font-size:14px;font-weight:300}
 
-/* WELCOME OVERLAY */
-.welcome-overlay{position:fixed;inset:0;background:rgba(30,42,53,.6);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeUp .3s ease}
-.welcome-card{background:var(--white);border-radius:20px;padding:40px 36px;max-width:420px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,0.18);text-align:center}
+/* WELCOME — inline dentro del quiz-wrap */
+.welcome-overlay{display:flex;align-items:center;justify-content:center;padding:40px 16px;animation:fadeUp .3s ease}
+.welcome-card{text-align:center;max-width:380px;width:100%}
 .welcome-emoji{font-size:52px;margin-bottom:16px}
 .welcome-card h2{font-family:'Playfair Display',serif;font-size:26px;font-weight:800;color:var(--slate);margin-bottom:8px}
 .welcome-card p{font-size:14px;color:var(--muted);font-weight:300;line-height:1.7;margin-bottom:28px}
@@ -336,42 +336,126 @@ const THEORY=[
   ]},
 ];
 
+const NO_DERECHO = (motivo) => [{l:"Resultado",f:`❌ No tiene derecho a la prestación`,d:motivo,hl:true}];
+
 const EXERCISES=[
   {id:"it_comun",title:"IT · Enfermedad Común",icon:"🩺",
     headBg:"#ddeaf5",headBorder:"#a8c8e8",headText:"#1a4a6e",
     desc:"Calcula paso a paso lo que cobra un trabajador de baja por enfermedad común.",
-    inputs:[{id:"baseCC",label:"Base CC mes anterior (€)",def:1800,min:900,max:5000},{id:"dias",label:"Días de baja",def:18,min:1,max:545}],
-    solve(v){const br=v.baseCC/30,d=v.dias,d2=Math.max(0,Math.min(d,15)-3),d3=Math.max(0,Math.min(d,20)-15),d4=Math.max(0,d-20),t2=d2*br*.6,t3=d3*br*.6,t4=d4*br*.75,tot=t2+t3+t4;
-      const s=[{l:"Base reguladora diaria",f:`${v.baseCC} ÷ 30 = ${br.toFixed(2)} €/día`},{l:`Días 1-3 (${Math.min(d,3)} d.)`,f:"0 % → 0,00 €",d:"No paga nadie"},{l:`Días 4-15 (${d2} d.)`,f:`60 % × ${br.toFixed(2)} = ${(br*.6).toFixed(2)} €/día × ${d2} = ${t2.toFixed(2)} €`,d:"Paga: Empresario"},{l:`Días 16-20 (${d3} d.)`,f:`60 % × ${br.toFixed(2)} = ${(br*.6).toFixed(2)} €/día × ${d3} = ${t3.toFixed(2)} €`,d:"Paga: INSS / Mutua"}];
-      if(d4>0)s.push({l:`Días 21+ (${d4} d.)`,f:`75 % × ${br.toFixed(2)} = ${(br*.75).toFixed(2)} €/día × ${d4} = ${t4.toFixed(2)} €`,d:"Paga: INSS / Mutua"});
-      s.push({l:"Total cobrado",f:`${tot.toFixed(2)} €`,hl:true});return s;}},
+    inputs:[
+      {id:"baseCC",label:"Base CC mes anterior (€)",def:1800,min:0,max:5000},
+      {id:"dias",label:"Días de baja",def:18,min:0,max:545},
+      {id:"cotizados",label:"Días cotizados (últimos 5 años)",def:365,min:0,max:1825},
+    ],
+    solve(v){
+      if(v.cotizados<180) return NO_DERECHO(`Necesitas al menos 180 días cotizados en los últimos 5 años. Llevas ${v.cotizados}.`);
+      if(v.dias<=0) return NO_DERECHO("El número de días de baja debe ser mayor que 0.");
+      if(v.baseCC<=0) return NO_DERECHO("La base de cotización debe ser mayor que 0.");
+      const br=v.baseCC/30,d=v.dias;
+      const d1=Math.min(d,3);
+      const d2=Math.max(0,Math.min(d,15)-3);
+      const d3=Math.max(0,Math.min(d,20)-15);
+      const d4=Math.max(0,d-20);
+      const t2=d2*br*.6, t3=d3*br*.6, t4=d4*br*.75, tot=t2+t3+t4;
+      const s=[
+        {l:"Carencia",f:`${v.cotizados} días cotizados ≥ 180 → Tiene derecho ✓`},
+        {l:"Base reguladora diaria",f:`${v.baseCC} ÷ 30 = ${br.toFixed(2)} €/día`},
+        {l:`Días 1-3 (${d1} d.) — período de espera`,f:"0 % → 0,00 €",d:"No paga nadie"},
+        {l:`Días 4-15 (${d2} d.)`,f:`60 % × ${br.toFixed(2)} × ${d2} días = ${t2.toFixed(2)} €`,d:"Paga: Empresario"},
+        {l:`Días 16-20 (${d3} d.)`,f:`60 % × ${br.toFixed(2)} × ${d3} días = ${t3.toFixed(2)} €`,d:"Paga: INSS / Mutua"},
+      ];
+      if(d4>0) s.push({l:`Días 21 en adelante (${d4} d.)`,f:`75 % × ${br.toFixed(2)} × ${d4} días = ${t4.toFixed(2)} €`,d:"Paga: INSS / Mutua"});
+      s.push({l:"Total cobrado",f:`${tot.toFixed(2)} €`,hl:true});
+      return s;
+    }
+  },
   {id:"it_at",title:"IT · Accidente de Trabajo",icon:"⚠️",
     headBg:"#fceee0",headBorder:"#f0b98a",headText:"#7a3010",
-    desc:"Calcula lo que cobra un trabajador tras un accidente laboral.",
-    inputs:[{id:"baseCPP",label:"Base CP mes anterior (€)",def:2100,min:900,max:5000},{id:"he",label:"Horas extra año anterior (€)",def:0,min:0,max:10000},{id:"dias",label:"Días de baja",def:10,min:1,max:545}],
-    solve(v){const brB=v.baseCPP/30,brH=v.he/365,br=brB+brH,r=Math.max(0,v.dias-1),resto=r*br*.75;
-      const s=[{l:"BR diaria (base)",f:`${v.baseCPP} ÷ 30 = ${brB.toFixed(2)} €/día`}];
-      if(v.he>0)s.push({l:"BR (horas extra)",f:`${v.he} ÷ 365 = ${brH.toFixed(2)} €/día`});
-      s.push({l:"BR diaria total",f:`${br.toFixed(2)} €/día`},{l:"Día 1 (baja)",f:`Salario íntegro = ${br.toFixed(2)} €`,d:"Paga: Empresario"},{l:`Días 2-${v.dias} (${r} d.)`,f:`75 % × ${br.toFixed(2)} = ${(br*.75).toFixed(2)} €/día × ${r} = ${resto.toFixed(2)} €`,d:"Paga: Mutua / INSS"},{l:"Total cobrado",f:`${(br+resto).toFixed(2)} €`,hl:true});return s;}},
+    desc:"Calcula lo que cobra un trabajador tras un accidente laboral. No se exige cotización previa.",
+    inputs:[
+      {id:"baseCPP",label:"Base CP mes anterior (€)",def:2100,min:0,max:5000},
+      {id:"he",label:"Horas extra año anterior (€)",def:0,min:0,max:10000},
+      {id:"dias",label:"Días de baja",def:10,min:0,max:545},
+    ],
+    solve(v){
+      if(v.dias<=0) return NO_DERECHO("El número de días de baja debe ser mayor que 0.");
+      if(v.baseCPP<=0) return NO_DERECHO("La base de cotización debe ser mayor que 0.");
+      const brB=v.baseCPP/30, brH=v.he/365, br=brB+brH;
+      const r=Math.max(0,v.dias-1), resto=r*br*.75;
+      const s=[
+        {l:"Carencia",f:"AT/EP → No se exige período previo de cotización ✓"},
+        {l:"BR diaria (base)",f:`${v.baseCPP} ÷ 30 = ${brB.toFixed(2)} €/día`},
+      ];
+      if(v.he>0) s.push({l:"BR (horas extra)",f:`${v.he} ÷ 365 = ${brH.toFixed(2)} €/día`});
+      s.push(
+        {l:"BR diaria total",f:`${br.toFixed(2)} €/día`},
+        {l:"Día 1 — día de la baja",f:`Salario íntegro = ${br.toFixed(2)} €`,d:"Paga: Empresario"},
+      );
+      if(r>0) s.push({l:`Días 2 en adelante (${r} d.)`,f:`75 % × ${br.toFixed(2)} × ${r} días = ${resto.toFixed(2)} €`,d:"Paga: Mutua / INSS"});
+      s.push({l:"Total cobrado",f:`${(br+resto).toFixed(2)} €`,hl:true});
+      return s;
+    }
+  },
   {id:"desempleo",title:"Desempleo",icon:"📉",
     headBg:"#e8e0f0",headBorder:"#b8a0d8",headText:"#3d1f6e",
-    desc:"Calcula duración y cuantía de la prestación por desempleo.",
-    inputs:[{id:"dc",label:"Días cotizados (últimos 6 años)",def:5110,min:360,max:8000},{id:"bcp",label:"Base CP media mensual (€)",def:2000,min:900,max:5000}],
-    solve(v){const t=[[360,539,120],[540,719,180],[720,899,210],[900,1079,240],[1080,1259,300],[1260,1439,330],[1440,1619,360],[1620,1799,420],[1800,1979,480],[1980,2159,540],[2160,1e9,720]];
-      let dur=0;for(const [a,b,d] of t){if(v.dc>=a&&v.dc<=b){dur=d;break;}}
-      const p1=v.bcp*.7,p2=v.bcp*.5,dR=Math.max(0,dur-180);
-      const s=[{l:"¿Tiene derecho?",f:`${v.dc} días ≥ 360 → Sí ✓`},{l:"Duración",f:`${v.dc} días cotizados → ${dur} días de prestación`},{l:"BR mensual",f:`≈ ${v.bcp.toFixed(2)} €/mes`},{l:"Primeros 180 días",f:`70 % × ${v.bcp.toFixed(2)} = ${p1.toFixed(2)} €/mes`}];
-      if(dR>0)s.push({l:`Desde día 181 (${dR} d.)`,f:`50 % × ${v.bcp.toFixed(2)} = ${p2.toFixed(2)} €/mes`});
-      s.push({l:"Resumen",f:`${dur} días — 180 d. a ${p1.toFixed(2)} €/mes${dR>0?`, resto a ${p2.toFixed(2)} €/mes`:""}`,hl:true});return s;}},
+    desc:"Calcula duración y cuantía de la prestación contributiva por desempleo.",
+    inputs:[
+      {id:"dc",label:"Días cotizados (últimos 6 años)",def:720,min:0,max:2190},
+      {id:"bcp",label:"Base CP media mensual (€)",def:2000,min:0,max:5000},
+    ],
+    solve(v){
+      if(v.dc<360) return NO_DERECHO(`Necesitas al menos 360 días cotizados en los últimos 6 años. Llevas ${v.dc}.`);
+      if(v.bcp<=0) return NO_DERECHO("La base de cotización debe ser mayor que 0.");
+      const tabla=[[360,539,120],[540,719,180],[720,899,210],[900,1079,240],[1080,1259,300],[1260,1439,330],[1440,1619,360],[1620,1799,420],[1800,1979,480],[1980,2159,540],[2160,2190,720]];
+      let dur=0;
+      for(const [a,b,d] of tabla){if(v.dc>=a&&v.dc<=b){dur=d;break;}}
+      if(!dur) dur=720; // ≥ 2160
+      const p1=v.bcp*.7, p2=v.bcp*.5, dR=Math.max(0,dur-180);
+      const s=[
+        {l:"Carencia",f:`${v.dc} días cotizados ≥ 360 → Tiene derecho ✓`},
+        {l:"Duración",f:`${v.dc} días cotizados → ${dur} días de prestación`},
+        {l:"Base reguladora",f:`≈ ${v.bcp.toFixed(2)} €/mes`},
+        {l:"Primeros 180 días",f:`70 % × ${v.bcp.toFixed(2)} = ${p1.toFixed(2)} €/mes`},
+      ];
+      if(dR>0) s.push({l:`Desde día 181 (${dR} d. restantes)`,f:`50 % × ${v.bcp.toFixed(2)} = ${p2.toFixed(2)} €/mes`});
+      s.push({l:"Resumen",f:`${dur} días — primeros 180 d. a ${p1.toFixed(2)} €/mes${dR>0?`, resto a ${p2.toFixed(2)} €/mes`:""}`,hl:true});
+      return s;
+    }
+  },
   {id:"nacimiento",title:"Nacimiento y Cuidado",icon:"👶",
     headBg:"#ddf0e8",headBorder:"#88ccaa",headText:"#1a4a30",
     desc:"Calcula la prestación por nacimiento y cuidado del menor.",
-    inputs:[{id:"baseCC",label:"Base CC mes anterior (€)",def:1800,min:900,max:5000},{id:"edad",label:"Edad del progenitor/a",def:30,min:16,max:65},{id:"dc7",label:"Días cotizados últimos 7 años",def:2100,min:0,max:6000},{id:"dcT",label:"Días cotizados totales",def:2100,min:0,max:15000}],
-    solve(v){const br=v.baseCC/30;let ok=false,txt="";
-      if(v.edad<21){ok=true;txt="< 21 años → No se exige";}
-      else if(v.edad<=26){ok=v.dc7>=90||v.dcT>=180;txt=`21-26 años → 90 d./7 años (${v.dc7}) o 180 d. total (${v.dcT})`;}
-      else{ok=v.dc7>=180||v.dcT>=360;txt=`> 26 años → 180 d./7 años (${v.dc7}) o 360 d. total (${v.dcT})`;}
-      return [{l:"Carencia",f:`${txt} → ${ok?"Cumple ✓":"No cumple ✗"}`},{l:"BR diaria",f:`${v.baseCC} ÷ 30 = ${br.toFixed(2)} €/día`},{l:"Cuantía",f:`100 % BR = ${br.toFixed(2)} €/día ≈ ${v.baseCC.toFixed(2)} €/mes`},{l:"Duración",f:"16 semanas (6 obligatorias + 10 flexibles)"},{l:"Total estimado",f:`${br.toFixed(2)} × 112 días = ${(br*112).toFixed(2)} €`,hl:true}];}},
+    inputs:[
+      {id:"baseCC",label:"Base CC mes anterior (€)",def:1800,min:0,max:5000},
+      {id:"edad",label:"Edad del progenitor/a",def:30,min:16,max:65},
+      {id:"dc7",label:"Días cotizados últimos 7 años",def:200,min:0,max:2555},
+      {id:"dcT",label:"Días cotizados en toda la vida",def:200,min:0,max:15000},
+    ],
+    solve(v){
+      if(v.baseCC<=0) return NO_DERECHO("La base de cotización debe ser mayor que 0.");
+      let ok=false, txt="";
+      if(v.edad<21){
+        ok=true;
+        txt="Menor de 21 años → No se exige período de carencia";
+      } else if(v.edad<=26){
+        ok=(v.dc7>=90||v.dcT>=180);
+        txt=`21-26 años → necesita 90 d. en últimos 7 años (tienes ${v.dc7}) o 180 d. totales (tienes ${v.dcT})`;
+      } else {
+        ok=(v.dc7>=180||v.dcT>=360);
+        txt=`Mayor de 26 años → necesita 180 d. en últimos 7 años (tienes ${v.dc7}) o 360 d. totales (tienes ${v.dcT})`;
+      }
+      if(!ok) return NO_DERECHO(`No cumple la carencia. ${txt}.`);
+      const br=v.baseCC/30;
+      return [
+        {l:"Carencia",f:`${txt} → Cumple ✓`},
+        {l:"Base reguladora diaria",f:`${v.baseCC} ÷ 30 = ${br.toFixed(2)} €/día`},
+        {l:"Cuantía diaria",f:`100 % de la BR = ${br.toFixed(2)} €/día`},
+        {l:"Cuantía mensual",f:`≈ ${v.baseCC.toFixed(2)} €/mes`},
+        {l:"Duración",f:"16 semanas — 6 obligatorias + 10 flexibles (por progenitor)"},
+        {l:"Total estimado (16 semanas)",f:`${br.toFixed(2)} × 112 días = ${(br*112).toFixed(2)} €`,hl:true},
+      ];
+    }
+  },
 ];
 
 /* Quiz questions with explanations */
@@ -577,8 +661,6 @@ function App(){
   const tt=TAB_TITLES[tab];
 
   return React.createElement(React.Fragment,null,
-    !nick&&React.createElement(Welcome,{onEnter:setNick}),
-
     React.createElement("nav",null,
       React.createElement("div",{className:"nav-brand"},React.createElement("span",{className:"nav-dot"}),"IPE I · Seguridad Social"),
       React.createElement("div",{className:"nav-right"},
@@ -614,7 +696,9 @@ function App(){
 
       tab==="quiz"&&React.createElement("div",{className:"quiz-wrap"},
         React.createElement("div",{className:"quiz-inner"},
-          React.createElement(Quiz,{nick}))),
+          !nick
+            ? React.createElement(Welcome,{onEnter:setNick})
+            : React.createElement(Quiz,{nick}))),
 
       tab==="ranking"&&React.createElement(Ranking,{nick,onBack:()=>setTab("quiz"),onRestart:()=>setTab("quiz")})),
 
