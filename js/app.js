@@ -66,22 +66,52 @@ function Block({section}){
 }
 
 function Calc({ex}){
-  const [inputs,setInputs]=useState(Object.fromEntries(ex.inputs.map(i=>[i.id,""])));
+  const normalizedInputs=ex.inputs.map(i=>({
+    id:i.id||i.n,
+    label:i.label||i.l,
+    placeholder:i.placeholder||i.d||"",
+    min:i.min,
+    max:i.max
+  }));
+  const [inputs,setInputs]=useState(Object.fromEntries(normalizedInputs.map(i=>[i.id,i.placeholder])));
   const [results,setResults]=useState(null);
   const calc=()=>{
     const vals=Object.entries(inputs).reduce((a,[k,v])=>{a[k]=parseFloat(v)||0;return a},{});
-    setResults(ex.calc(vals));
+    const rawResults=(ex.calc||ex.solve)(vals);
+    if(Array.isArray(rawResults)){
+      setResults(rawResults);
+      return;
+    }
+    if(rawResults&&rawResults.NO_DERECHO){
+      setResults([
+        {label:"Sin derecho",val:rawResults.msg,hl:true},
+        ...(rawResults.desglose||[]).map(item=>({label:"Detalle",val:item})),
+      ]);
+      return;
+    }
+    if(rawResults){
+      const mappedResults=[];
+      if(rawResults.resultado!==undefined)mappedResults.push({label:"Resultado",val:`${rawResults.resultado} €`,hl:true});
+      if(rawResults.br!==undefined)mappedResults.push({label:"Base reguladora",val:`${rawResults.br} €`});
+      if(rawResults.diarios!==undefined)mappedResults.push({label:"Importe diario",val:`${rawResults.diarios} €`});
+      if(rawResults.duracion!==undefined)mappedResults.push({label:"Duracion",val:`${rawResults.duracion} dias`});
+      if(rawResults.calculo)mappedResults.push({label:"Calculo",val:rawResults.calculo});
+      if(rawResults.desglose)mappedResults.push(...rawResults.desglose.map(item=>({label:"Detalle",val:item})));
+      setResults(mappedResults);
+      return;
+    }
+    setResults([]);
   };
   return React.createElement("div",{className:"calc-card"},
     React.createElement("div",{className:"calc-head"},
       React.createElement("span",{className:"calc-icon"},ex.icon),
       React.createElement("div",null,
-        React.createElement("div",{className:"calc-head-title"},ex.name),
-        React.createElement("div",{className:"calc-head-desc"},ex.desc))),
+        React.createElement("div",{className:"calc-head-title"},ex.name||ex.title),
+        React.createElement("div",{className:"calc-head-desc"},ex.desc||ex.description))),
     React.createElement("div",{className:"calc-inputs"},
-      ex.inputs.map(i=>React.createElement("div",{key:i.id},
+      normalizedInputs.map(i=>React.createElement("div",{key:i.id},
         React.createElement("label",{className:"calc-label"},i.label),
-        React.createElement("input",{className:"calc-input",type:"number",placeholder:i.placeholder,value:inputs[i.id],onChange:e=>setInputs({...inputs,[i.id]:e.target.value})})))),
+        React.createElement("input",{className:"calc-input",type:"number",placeholder:i.placeholder,min:i.min,max:i.max,value:inputs[i.id],onChange:e=>setInputs({...inputs,[i.id]:e.target.value})})))),
     React.createElement("div",{className:"calc-btn-wrap"},
       React.createElement("button",{className:"calc-btn",onClick:calc},"Calcular")),
     results&&React.createElement("div",{className:"calc-results"},results.map((r,i)=>React.createElement("div",{key:i,className:`step${r.hl?" hl":""}`},
