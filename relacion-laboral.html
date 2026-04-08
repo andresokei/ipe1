@@ -602,6 +602,27 @@
   </div>
 </div>
 
+<!-- ===== QUESTION COUNT SELECT ===== -->
+<div id="question-count-screen" class="screen" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px">
+  <div style="text-align:center;max-width:480px">
+    <div style="font-size:52px;margin-bottom:16px">📝</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:26px;font-weight:800;color:var(--slate);margin-bottom:8px">¿Cuántas preguntas?</h2>
+    <p style="font-size:14px;color:var(--muted);font-weight:300;line-height:1.7;margin-bottom:32px">Usa el slider para seleccionar el número de preguntas que deseas responder.</p>
+    <div style="margin:32px 0">
+      <input id="questionSlider" type="range" min="1" max="5" value="3" style="width:100%;height:6px;border-radius:3px;background:var(--border);outline:none;cursor:pointer;-webkit-appearance:none;appearance:none"/>
+      <style>
+        #questionSlider::-webkit-slider-thumb{appearance:none;width:24px;height:24px;border-radius:50%;background:var(--gold);cursor:pointer;box-shadow:0 2px 8px rgba(200,151,58,0.4)}
+        #questionSlider::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--gold);cursor:pointer;border:none;box-shadow:0 2px 8px rgba(200,151,58,0.4)}
+      </style>
+      <div style="text-align:center;margin-top:24px">
+        <div id="sliderValue" style="font-family:'Playfair Display',serif;font-size:56px;font-weight:800;color:var(--gold)">3</div>
+        <div id="sliderLabel" style="font-size:14px;color:var(--muted);margin-top:8px">de 5 preguntas</div>
+      </div>
+    </div>
+    <button onclick="selectQuestionCountValue()" style="width:100%;padding:14px;border:none;border-radius:10px;background:var(--gold);color:#fff;font-family:'Lato',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s;margin-top:24px">Comenzar →</button>
+  </div>
+</div>
+
 <!-- ===== QUIZ SCREEN ===== -->
 <div id="quiz-screen" class="screen">
   <div class="lesson-progress-bar"><div class="lesson-progress-fill" id="quizFill" style="background:var(--gold)"></div></div>
@@ -1086,6 +1107,7 @@ let currentLessonIdx = 0;
 let currentQuizIdx = 0;
 let quizScore = 0;
 let quizQuestions = [];
+let quizQCount = null;
 let navHistory = [];
 
 // ===================== NAVIGATION =====================
@@ -1093,6 +1115,7 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.getElementById('backBtn').classList.toggle('visible', id !== 'home');
+  if (id === 'topic-select' || id === 'home') quizQCount = null;
   navHistory.push(id);
   window.scrollTo({ top: 0, behavior: 'instant' });
   document.documentElement.scrollTop = 0;
@@ -1154,9 +1177,40 @@ function prevLesson() { if (currentLessonIdx > 0) { currentLessonIdx--; renderLe
 
 // ===================== QUIZ =====================
 function startQuiz() {
+  if (quizQCount === null) {
+    showScreen('question-count-screen');
+    const totalQ = topics[currentTopicIdx].quiz.length;
+    const slider = document.getElementById('questionSlider');
+    slider.max = totalQ;
+    slider.value = Math.ceil(totalQ / 2);
+    updateSliderDisplay();
+    return;
+  }
   currentQuizIdx = 0;
   quizScore = 0;
-  quizQuestions = [...topics[currentTopicIdx].quiz];
+  let allQuestions = [...topics[currentTopicIdx].quiz];
+  quizQuestions = quizQCount === allQuestions.length ? allQuestions : allQuestions.slice(0, quizQCount);
+  renderQuestion();
+}
+
+function updateSliderDisplay() {
+  const slider = document.getElementById('questionSlider');
+  const totalQ = topics[currentTopicIdx].quiz.length;
+  document.getElementById('sliderValue').textContent = slider.value;
+  document.getElementById('sliderLabel').textContent = 'de ' + totalQ + ' preguntas';
+}
+
+function selectQuestionCountValue() {
+  const slider = document.getElementById('questionSlider');
+  setQuestionCount(parseInt(slider.value));
+}
+
+function setQuestionCount(count) {
+  const allQuestions = topics[currentTopicIdx].quiz;
+  quizQCount = count === -1 ? allQuestions.length : Math.min(count, allQuestions.length);
+  currentQuizIdx = 0;
+  quizScore = 0;
+  quizQuestions = quizQCount === allQuestions.length ? allQuestions : allQuestions.slice(0, quizQCount);
   renderQuestion();
 }
 
@@ -1237,7 +1291,15 @@ function showResults() {
   document.getElementById('resultSub').textContent = sub;
 }
 
-function repeatQuiz() { startQuiz(); }
+function repeatQuiz() { quizQCount = null; startQuiz(); }
+
+// Event listener para el slider
+document.addEventListener('DOMContentLoaded', function() {
+  const slider = document.getElementById('questionSlider');
+  if (slider) {
+    slider.addEventListener('input', updateSliderDisplay);
+  }
+});
 </script>
 </body>
 </html>

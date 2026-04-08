@@ -85,7 +85,7 @@ function Calc({ex}){
     if(rawResults&&rawResults.NO_DERECHO){
       setResults([
         {label:"Sin derecho",val:rawResults.msg,hl:true},
-        ...(rawResults.desglose||[]).map(item=>({label:"Detalle",val:item})),
+        ...(rawResults.desglose||[]).map(item=>typeof item==="string"?{label:"Detalle",val:item}:item),
       ]);
       return;
     }
@@ -96,7 +96,12 @@ function Calc({ex}){
       if(rawResults.diarios!==undefined)mappedResults.push({label:"Importe diario",val:`${rawResults.diarios} €`});
       if(rawResults.duracion!==undefined)mappedResults.push({label:"Duracion",val:`${rawResults.duracion} dias`});
       if(rawResults.calculo)mappedResults.push({label:"Calculo",val:rawResults.calculo});
-      if(rawResults.desglose)mappedResults.push(...rawResults.desglose.map(item=>({label:"Detalle",val:item})));
+      if(rawResults.desglose){
+        mappedResults.push(...rawResults.desglose.map(item=>{
+          if(typeof item==="string")return{label:"Detalle",val:item};
+          return{label:item.label||"Paso",val:item.val||"",formula:item.formula,operation:item.operation,explanation:item.explanation,hl:item.hl||false};
+        }));
+      }
       setResults(mappedResults);
       return;
     }
@@ -116,8 +121,10 @@ function Calc({ex}){
       React.createElement("button",{className:"calc-btn",onClick:calc},"Calcular")),
     results&&React.createElement("div",{className:"calc-results"},results.map((r,i)=>React.createElement("div",{key:i,className:`step${r.hl?" hl":""}`},
       React.createElement("div",{className:"step-label"},r.label),
+      r.formula&&React.createElement("div",{className:"step-formula"},r.formula),
+      r.operation&&React.createElement("div",{className:"step-operation"},r.operation),
       React.createElement("div",{className:"step-val"},r.val),
-      r.note&&React.createElement("div",{className:"step-note"},r.note)))));
+      r.explanation&&React.createElement("div",{className:"step-explanation"},r.explanation)))));
 }
 
 function Quiz({nick,qCount,onRestart}){

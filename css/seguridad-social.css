@@ -71,7 +71,10 @@ tbody tr:nth-child(even) td{background:var(--cream)}
 .step.hl{background:var(--gold-light);border-color:#e0c87a;border-left:3px solid var(--gold)}
 .step-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px}
 .step.hl .step-label{color:var(--gold-dark)}
+.step-formula{font-size:13px;background:#f0f0f0;padding:8px 12px;border-radius:6px;margin:5px 0;font-family:monospace;color:#5a5a5a;font-weight:500;border-left:3px solid var(--muted)}
+.step-operation{font-size:13px;background:#fafafa;padding:8px 12px;border-radius:6px;margin:5px 0;font-family:monospace;color:#333;font-weight:600}
 .step-val{font-size:14px;font-weight:700;color:var(--text);line-height:1.6}
+.step-explanation{font-size:13px;color:var(--muted);margin-top:8px;border-left:2px solid var(--border);padding-left:10px;line-height:1.5;font-style:italic}
 .step-note{font-size:12px;color:var(--muted);margin-top:4px}
 
 .quiz-wrap{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
