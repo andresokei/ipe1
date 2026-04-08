@@ -10,11 +10,10 @@ const EXERCISES=[
     inputs:[
       {l:"Base de Cotización CC mes anterior (€):",t:"number",n:"base",d:"1800",min:"500",max:"5100"},
       {l:"Días de baja (carencia: 3 días sin cobro):",t:"number",n:"dias",d:"20",min:"1",max:"545"},
-      {l:"¿Hay conflicto colectivo? (0=No, 1=Sí):",t:"number",n:"conflicto",d:"0",min:"0",max:"1"},
     ],
     solve:function(inputs){
-      const {base, dias, conflicto} = inputs;
-      if(!base||!dias||conflicto===undefined)return{NO_DERECHO:!0,msg:"Rellena todos los campos."};
+      const {base, dias} = inputs;
+      if(!base||!dias)return{NO_DERECHO:!0,msg:"Rellena todos los campos."};
       const diarios=base/30;
       let acumulado=0,pasos=[];
       
@@ -76,17 +75,6 @@ const EXERCISES=[
           operation:`${dias_21_mas} × ${diarios.toFixed(2)} × 0,75`,
           val:`${importe_21_mas.toFixed(2)} €`,
           explanation:"A partir del día 21 se aplica el 75% de la BR"
-        });
-      }
-      
-      if(conflicto){
-        acumulado*=1.2;
-        pasos.push({
-          label:"Incremento conflicto colectivo",
-          formula:"Total × 1,20 (+ 20%)",
-          operation:`${(acumulado/1.2).toFixed(2)} × 1,20`,
-          val:`${acumulado.toFixed(2)} €`,
-          explanation:"Se aplica un incremento del 20% por conflicto colectivo"
         });
       }
       
