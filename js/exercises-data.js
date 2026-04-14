@@ -9,7 +9,7 @@ const EXERCISES=[
     description:"Calcula la prestación por incapacidad temporal por enfermedad común según días de baja.",
     inputs:[
       {l:"Base de Cotización CC mes anterior (€):",t:"number",n:"base",d:"1800",min:"500",max:"5100"},
-      {l:"Días de baja (carencia: 3 días sin cobro):",t:"number",n:"dias",d:"20",min:"1",max:"545"},
+      {l:"Días de baja:",t:"number",n:"dias",d:"20",min:"1",max:"545"},
     ],
     solve:function(inputs){
       const {base, dias} = inputs;
@@ -25,12 +25,13 @@ const EXERCISES=[
         explanation:"Se divide la base cotización entre los 30 días del mes"
       });
       
+      const dias_1_3=Math.min(dias,3);
       pasos.push({
-        label:"Análisis de días de baja",
-        formula:"Carencia primeros 3 días: 0%",
-        operation:`Días de baja: ${dias}`,
-        val:`${Math.max(0, dias-3)} días cobrados`,
-        explanation:"Los 3 primeros días son de carencia y no se cobran"
+        label:`Días 1–3: 0% (periodo de espera)`,
+        formula:"Importe = Días × BR diaria × 0%",
+        operation:`${dias_1_3} × ${diarios.toFixed(2)} × 0,00`,
+        val:"0,00 €",
+        explanation:"Los primeros 3 días son periodo de espera y no generan prestación"
       });
       
       if(dias<=3){
