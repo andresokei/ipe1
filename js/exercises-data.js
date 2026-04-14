@@ -106,11 +106,10 @@ const EXERCISES=[
       {l:"Base de Cotización CP mes anterior (€):",t:"number",n:"bccp",d:"1900",min:"500",max:"5100"},
       {l:"Horas extraordinarias año anterior (€):",t:"number",n:"horas_extra",d:"300",min:"0",max:"5000"},
       {l:"Días de baja:",t:"number",n:"dias",d:"30",min:"1",max:"365"},
-      {l:"¿Baja parcial? (0=No, 1=Sí):",t:"number",n:"parcial",d:"0",min:"0",max:"1"},
     ],
     solve:function(inputs){
-      const {bccp, horas_extra, dias, parcial} = inputs;
-      if(!bccp||horas_extra===undefined||!dias||parcial===undefined)return{NO_DERECHO:!0,msg:"Rellena todos los campos."};
+      const {bccp, horas_extra, dias} = inputs;
+      if(!bccp||horas_extra===undefined||!dias)return{NO_DERECHO:!0,msg:"Rellena todos los campos."};
       const br_diaria=bccp/30+horas_extra/365;
       let acumulado=0,pasos=[];
       
@@ -146,24 +145,12 @@ const EXERCISES=[
         explanation:"A partir del día 2, la Mutua o INSS paga el 75% de la BR diaria"
       });
       
-      // Paso 4: Si hay baja parcial, aplicar 50%
-      if(parcial){
-        acumulado*=0.5;
-        pasos.push({
-          label:"Aplicar baja parcial (50%)",
-          formula:"Total × 0,50",
-          operation:`${(acumulado/0.5).toFixed(2)} × 0,50`,
-          val:`${acumulado.toFixed(2)} €`,
-          explanation:"Si la baja es parcial, se cobra el 50% de la cantidad total"
-        });
-      }
-      
       // Resultado final
       pasos.push({
         label:"Total a cobrar",
         val:`${acumulado.toFixed(2)} €`,
         hl:true,
-        explanation:`Prestación por IT por AT/EP: ${importe_dia1.toFixed(2)} € (día 1) + ${importe_dias_75.toFixed(2)} € (días 2-${dias})${parcial?" (aplicado 50% baja parcial)":""}`
+        explanation:`Prestación por IT por AT/EP: ${importe_dia1.toFixed(2)} € (día 1) + ${importe_dias_75.toFixed(2)} € (días 2-${dias})`
       });
       
       return{
@@ -185,11 +172,10 @@ const EXERCISES=[
     inputs:[
       {l:"Días cotizados en últimos 6 años:",t:"number",n:"dias_cotiz",d:"1260",min:"360",max:"2500"},
       {l:"Base de Cotización CP últimos 180 días (€):",t:"number",n:"base_180",d:"1800",min:"500",max:"5100"},
-      {l:"Meses a calcular:",t:"number",n:"meses",d:"6",min:"1",max:"24"},
     ],
     solve:function(inputs){
-      const {dias_cotiz, base_180, meses} = inputs;
-      if(!dias_cotiz||!base_180||!meses)return{NO_DERECHO:!0,msg:"Rellena todos los campos."};
+      const {dias_cotiz, base_180} = inputs;
+      if(!dias_cotiz||!base_180)return{NO_DERECHO:!0,msg:"Rellena todos los campos."};
       if(dias_cotiz<360)return{NO_DERECHO:!0,msg:"Necesita ≥ 360 días. Actualmente: "+dias_cotiz+" días."};
       
       let pasos=[];
@@ -202,18 +188,18 @@ const EXERCISES=[
         explanation:"Es obligatorio haber cotizado al menos 360 días en los últimos 6 años"
       });
       
-      // Calcular duración
+      // Calcular duración (tabla oficial SEPE art. 269 LGSS)
       let duracion;
       if(dias_cotiz<540)duracion=120;
       else if(dias_cotiz<720)duracion=180;
-      else if(dias_cotiz<900)duracion=210;
-      else if(dias_cotiz<1080)duracion=240;
-      else if(dias_cotiz<1260)duracion=300;
-      else if(dias_cotiz<1440)duracion=330;
-      else if(dias_cotiz<1620)duracion=360;
-      else if(dias_cotiz<1800)duracion=420;
-      else if(dias_cotiz<1980)duracion=480;
-      else if(dias_cotiz<2160)duracion=540;
+      else if(dias_cotiz<900)duracion=240;
+      else if(dias_cotiz<1080)duracion=300;
+      else if(dias_cotiz<1260)duracion=360;
+      else if(dias_cotiz<1440)duracion=420;
+      else if(dias_cotiz<1620)duracion=480;
+      else if(dias_cotiz<1800)duracion=540;
+      else if(dias_cotiz<1980)duracion=600;
+      else if(dias_cotiz<2160)duracion=660;
       else duracion=720;
       
       pasos.push({
@@ -232,174 +218,63 @@ const EXERCISES=[
         explanation:"Se toma la base media de cotización de los últimos 180 días (6 meses)"
       });
       
-      const meses_1_periodo=Math.ceil(duracion/30);
-      const meses_2_periodo=Math.min(6,Math.ceil(duracion/30)+6);
+      const total_meses=Math.ceil(duracion/30);
+      const meses_60=Math.max(0,total_meses-6); // resto al 60%
       const prestacion_m1=base_180*0.7;
       const prestacion_m2=base_180*0.6;
-      
+
       pasos.push({
-        label:`Primeros ${meses_1_periodo} meses: 70%`,
+        label:"Primeros 6 meses: 70%",
         formula:"Importe = Base × 70%",
         operation:`${base_180.toFixed(2)} × 0,70`,
         val:`${prestacion_m1.toFixed(2)} €/mes`,
-        explanation:`Durante los primeros ${meses_1_periodo} meses se cobra el 70% de la BR`
+        explanation:"Durante los primeros 180 días (6 meses) se cobra el 70% de la BR"
       });
-      
-      if(meses_2_periodo>meses_1_periodo){
+
+      if(meses_60>0){
         pasos.push({
-          label:`Meses ${meses_1_periodo+1}–${meses_2_periodo}: 60%`,
+          label:`Meses 7–${total_meses}: 60%`,
           formula:"Importe = Base × 60%",
           operation:`${base_180.toFixed(2)} × 0,60`,
           val:`${prestacion_m2.toFixed(2)} €/mes`,
-          explanation:`En los siguientes 6 meses se cobra el 60% de la BR`
+          explanation:`Desde el día 181 en adelante se cobra el 60% de la BR`
         });
       }
-      
+
       let acumulado=0;
       let desglose_meses=[];
-      for(let mes=1;mes<=meses;mes++){
-        if(mes<=meses_1_periodo){
+      for(let mes=1;mes<=total_meses;mes++){
+        if(mes<=6){
           acumulado+=prestacion_m1;
           desglose_meses.push({
             label:`Mes ${mes}`,
             operation:`70% de ${base_180.toFixed(2)}`,
             val:`${prestacion_m1.toFixed(2)} €`
           });
-        }else if(mes<=meses_2_periodo){
+        }else{
           acumulado+=prestacion_m2;
           desglose_meses.push({
             label:`Mes ${mes}`,
             operation:`60% de ${base_180.toFixed(2)}`,
             val:`${prestacion_m2.toFixed(2)} €`
           });
-        }else{
-          desglose_meses.push({
-            label:`Mes ${mes}`,
-            operation:"Prestación agotada",
-            val:"0 €"
-          });
         }
       }
-      
+
       pasos.push(...desglose_meses);
-      
+
       pasos.push({
-        label:"Total por " + meses + " meses",
+        label:`Total por ${total_meses} meses`,
         formula:"Suma de prestaciones mensuales",
         val:`${acumulado.toFixed(2)} €`,
         hl:true,
-        explanation:`Cantidad total a cobrar por desempleo en los ${meses} meses solicitados`
+        explanation:`Cantidad total a cobrar por desempleo durante los ${total_meses} meses de prestación`
       });
       
       return{
         resultado:acumulado.toFixed(2),
         br:base_180.toFixed(2),
         duracion,
-        desglose:pasos
-      }
-    }
-  },
-  {
-    id:"nacimiento",
-    title:"Cálculo Nacimiento/Maternidad",
-    icon:"👶",
-    headBg:"#fce4ec",
-    headBorder:"#e91e63",
-    headText:"#880e4f",
-    description:"Calcula la prestación por maternidad, paternidad, adopción o acogimiento análogo.",
-    inputs:[
-      {l:"Base de Cotización CC mes anterior (€):",t:"number",n:"base",d:"1800",min:"500",max:"5100"},
-      {l:"Edad del progenitor:",t:"number",n:"edad",d:"28",min:"18",max:"65"},
-      {l:"Días cotizados en toda la vida:",t:"number",n:"dias_vida",d:"1000",min:"0",max:"15000"},
-      {l:"Semanas de licencia a cobrar:",t:"number",n:"semanas",d:"16",min:"6",max:"40"},
-      {l:"¿Adopción o acogimiento? (0=No, 1=Sí):",t:"number",n:"adopcion",d:"0",min:"0",max:"1"},
-    ],
-    solve:function(inputs){
-      const {base, edad, dias_vida, semanas, adopcion} = inputs;
-      if(!base||!edad||dias_vida===undefined||!semanas||adopcion===undefined)return{NO_DERECHO:!0,msg:"Rellena todos los campos."};
-      
-      let pasos=[];
-      
-      pasos.push({
-        label:"Verificar requisito de carencia",
-        formula:"Según edad del progenitor",
-        operation:`Edad: ${edad} años | Días cotizados: ${dias_vida}`,
-        val:edad<21?"−":"Requerido",
-        explanation:edad<21?"Menores de 21 años no necesitan período mínimo de cotización":"Verificar requisito según tramo de edad"
-      });
-      
-      let carencia_ok=false, req_dias=0;
-      if(edad<21){
-        carencia_ok=true;
-        req_dias=0;
-      }else if(edad<26){
-        carencia_ok=dias_vida>=90;
-        req_dias=90;
-      }else{
-        carencia_ok=dias_vida>=180;
-        req_dias=180;
-      }
-      
-      if(!carencia_ok){
-        const req_texto=edad<21?"sin requisitos":edad<26?"90 días":"180 días";
-        return{NO_DERECHO:!0,msg:`Edad ${edad}: necesita ${req_texto} cotizados. Tiene: ${dias_vida} días.`,desglose:pasos};
-      }
-      
-      pasos.push({
-        label:"Cumplimiento de carencia",
-        formula:"Requisito para edad " + edad,
-        operation:`Necesita: ${req_dias} días mínimo | Tiene: ${dias_vida} días`,
-        val:"✓ CUMPLE",
-        explanation:"Se cumplen los requisitos de cotización para esta edad"
-      });
-      
-      const diarios=base/30;
-      pasos.push({
-        label:"Base Reguladora Diaria",
-        formula:"BR = Base CC mes anterior ÷ 30",
-        operation:`${base} € ÷ 30 días`,
-        val:`${diarios.toFixed(2)} €/día`,
-        explanation:"Se divide la base cotización entre los 30 días del mes"
-      });
-      
-      const dias_licencia=semanas*7;
-      const total=diarios*dias_licencia;
-      
-      pasos.push({
-        label:"Duración de la licencia",
-        formula:"Semanas × 7 días",
-        operation:`${semanas} semanas × 7`,
-        val:`${dias_licencia} días`,
-        explanation:`${adopcion?"Por adopción o acogimiento":"Maternidad/Paternidad biológica: mínimo 6 semanas obligatorias de forma ininterrumpida"}`
-      });
-      
-      pasos.push({
-        label:"Prestación por nacimiento",
-        formula:"Importe = Días × BR diaria × 100%",
-        operation:`${dias_licencia} × ${diarios.toFixed(2)} × 1,00`,
-        val:`${total.toFixed(2)} €`,
-        explanation:"Se cobra el 100% de la base reguladora diaria por cada día de licencia"
-      });
-      
-      pasos.push({
-        label:"Tipo de prestación",
-        formula:adopcion?"Adopción o acogimiento":"Maternidad/Paternidad",
-        val:adopcion?"Adopción o acogimiento":`Maternidad/Paternidad (desde 2023: ${semanas} semanas por progenitor)`,
-        explanation:adopcion?"Ambos progenitores tienen derecho a 16 semanas ampliables":"Ambos progenitores pueden disfrutar este derecho de forma individual e intransferible"
-      });
-      
-      pasos.push({
-        label:"Total a cobrar",
-        formula:"Suma total de la prestación",
-        val:`${total.toFixed(2)} €`,
-        hl:true,
-        explanation:`Cantidad total de la prestación de maternidad/paternidad por ${semanas} semanas de licencia`
-      });
-      
-      return{
-        resultado:total.toFixed(2),
-        br:base.toFixed(2),
-        diarios:diarios.toFixed(2),
         desglose:pasos
       }
     }
